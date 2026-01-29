@@ -16,6 +16,8 @@
 .npm-cache/
 .npm/
 .cache/
+mood_tracker.sqlite
+
 /public/build
 /public/hot
 /public/storage
