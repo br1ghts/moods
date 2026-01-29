@@ -1,5 +1,7 @@
 import AppLayout from '@/Layouts/AppLayout';
 import { useForm } from '@inertiajs/react';
+import axios from 'axios';
+import { useEffect, useState } from 'react';
 
 const cadenceOptions = [
     { value: 'hourly', label: 'Hourly' },
@@ -26,7 +28,25 @@ const timezones = [
     'America/Phoenix',
 ];
 
-export default function Settings({ notificationSettings }) {
+function urlBase64ToUint8Array(base64String) {
+    const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
+    const base64 = (base64String + padding)
+        .replace(/-/g, '+')
+        .replace(/_/g, '/');
+
+    const rawData = window.atob(base64);
+    const outputArray = new Uint8Array(rawData.length);
+
+    for (let i = 0; i < rawData.length; ++i) {
+        outputArray[i] = rawData.charCodeAt(i);
+    }
+
+    return outputArray;
+}
+
+export default function Settings({ notificationSettings, pushStatus = {} }) {
+    const { hasSubscription = false } = pushStatus;
+
     const form = useForm({
         enabled: notificationSettings?.enabled ?? false,
         cadence: notificationSettings?.cadence ?? 'daily',
@@ -35,6 +55,55 @@ export default function Settings({ notificationSettings }) {
         timezone: notificationSettings?.timezone ?? 'America/Chicago',
     });
 
+    const [pushSupported, setPushSupported] = useState(false);
+    const [permissionState, setPermissionState] = useState(
+        typeof Notification !== 'undefined' ? Notification.permission : 'default',
+    );
+    const [registration, setRegistration] = useState(null);
+    const [subscribed, setSubscribed] = useState(hasSubscription);
+    const [pushProcessing, setPushProcessing] = useState(false);
+    const [pushError, setPushError] = useState('');
+
+    useEffect(() => {
+        if (typeof window === 'undefined') {
+            return;
+        }
+
+        if ('serviceWorker' in navigator && 'PushManager' in window) {
+            setPushSupported(true);
+
+            navigator.serviceWorker.ready
+                .then((reg) => {
+                    setRegistration(reg);
+                    return reg.pushManager.getSubscription();
+                })
+                .then((subscription) => {
+                    if (subscription) {
+                        setSubscribed(true);
+                    }
+                })
+                .catch(() => {
+                    setPushSupported(false);
+                });
+        }
+
+        if (typeof Notification !== 'undefined') {
+            setPermissionState(Notification.permission);
+
+            if ('permissions' in navigator) {
+                navigator.permissions
+                    .query({ name: 'notifications' })
+                    .then((status) => {
+                        setPermissionState(status.state);
+                        status.onchange = () => setPermissionState(status.state);
+                    })
+                    .catch(() => {
+                        // ignore
+                    });
+            }
+        }
+    }, []);
+
     const handleSubmit = (event) => {
         event.preventDefault();
 
@@ -42,6 +111,95 @@ export default function Settings({ notificationSettings }) {
             preserveScroll: true,
         });
     };
+
+    const handleEnablePush = async () => {
+        if (!registration || typeof Notification === 'undefined') {
+            return;
+        }
+
+        setPushProcessing(true);
+        setPushError('');
+
+        try {
+            const permission = await Notification.requestPermission();
+            setPermissionState(permission);
+
+            if (permission !== 'granted') {
+                setPushError('Push permission was not granted.');
+                return;
+            }
+
+            const { data } = await axios.get(route('push.vapid-public-key'));
+            const key = data.key ?? '';
+
+            if (!key) {
+                throw new Error('Missing VAPID public key.');
+            }
+
+            const subscription = await registration.pushManager.subscribe({
+                userVisibleOnly: true,
+                applicationServerKey: urlBase64ToUint8Array(key),
+            });
+
+            const payload = subscription.toJSON();
+            payload.content_encoding = subscription.options?.contentEncoding ?? null;
+            payload.user_agent = navigator.userAgent;
+
+            await axios.post(route('push.subscribe'), payload);
+
+            setSubscribed(true);
+        } catch (error) {
+            setPushError(
+                error?.response?.data?.message ||
+                    error?.message ||
+                    'Unable to subscribe for push notifications.',
+            );
+        } finally {
+            setPushProcessing(false);
+        }
+    };
+
+    const handleDisablePush = async () => {
+        if (!registration) {
+            return;
+        }
+
+        setPushProcessing(true);
+        setPushError('');
+
+        try {
+            const subscription = await registration.pushManager.getSubscription();
+
+            if (subscription) {
+                await axios.delete(route('push.unsubscribe'), {
+                    data: { endpoint: subscription.endpoint },
+                });
+
+                await subscription.unsubscribe();
+            }
+
+            setSubscribed(false);
+        } catch (error) {
+            setPushError(
+                error?.response?.data?.message ||
+                    error?.message ||
+                    'Unable to unsubscribe from push notifications.',
+            );
+        } finally {
+            setPushProcessing(false);
+        }
+    };
+
+    const isEnableMode = !subscribed;
+    const pushButtonDisabled =
+        pushProcessing ||
+        (isEnableMode && (!pushSupported || permissionState === 'denied'));
+
+    const statusItems = [
+        { label: 'Push supported', value: pushSupported ? 'Yes' : 'No' },
+        { label: 'Permission', value: permissionState },
+        { label: 'Subscribed', value: subscribed ? 'Yes' : 'No' },
+    ];
 
     return (
         <div className="space-y-6">
@@ -161,6 +319,54 @@ export default function Settings({ notificationSettings }) {
                         </button>
                     </div>
                 </form>
+            </section>
+
+            <section className="rounded-3xl border border-slate-200 bg-white/90 p-6 shadow-lg shadow-slate-900/5">
+                <div className="flex items-center justify-between gap-4">
+                    <div>
+                        <h2 className="text-xl font-semibold text-slate-900">
+                            Push Notifications
+                        </h2>
+                        <p className="text-sm text-slate-500">
+                            Receive reminders right on your devices with push.
+                        </p>
+                    </div>
+                    <button
+                        type="button"
+                        onClick={isEnableMode ? handleEnablePush : handleDisablePush}
+                        disabled={pushButtonDisabled}
+                        className="rounded-full bg-slate-900 px-6 py-2 text-xs font-semibold uppercase tracking-widest text-white disabled:cursor-not-allowed disabled:opacity-70"
+                    >
+                        {isEnableMode ? 'Enable Push' : 'Disable Push'}
+                    </button>
+                </div>
+
+                <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
+                    {statusItems.map((item) => (
+                        <div key={item.label} className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-xs font-semibold uppercase tracking-wide text-slate-500">
+                            <p className="text-[10px] text-slate-400">{item.label}</p>
+                            <p className="text-sm text-slate-900">{item.value}</p>
+                        </div>
+                    ))}
+                </div>
+
+                {pushError && (
+                    <p className="mt-4 text-xs font-semibold text-red-600">
+                        {pushError}
+                    </p>
+                )}
+
+                {!pushSupported && (
+                    <p className="mt-2 text-xs text-slate-500">
+                        Push not supported in this browser/device.
+                    </p>
+                )}
+
+                {permissionState === 'denied' && (
+                    <p className="mt-2 text-xs text-red-600">
+                        Notifications are blocked—enable them in your browser settings.
+                    </p>
+                )}
             </section>
         </div>
     );

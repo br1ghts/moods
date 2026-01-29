@@ -1,0 +1,17 @@
+{
+    "name": "Mood Tracker",
+    "short_name": "Mood",
+    "start_url": "/",
+    "scope": "/",
+    "display": "standalone",
+    "background_color": "#ffffff",
+    "theme_color": "#f8fafc",
+    "description": "Track your mood with gentle reminders.",
+    "icons": [
+        {
+            "src": "/favicon.ico",
+            "sizes": "any",
+            "type": "image/x-icon"
+        }
+    ]
+}

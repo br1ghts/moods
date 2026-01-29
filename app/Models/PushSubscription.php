@@ -2,25 +2,25 @@
 
 namespace App\Models;
 
+use App\Models\User;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-class NotificationSetting extends Model
+class PushSubscription extends Model
 {
     protected $fillable = [
         'user_id',
-        'enabled',
-        'cadence',
-        'preferred_time',
-        'preferred_weekday',
-        'timezone',
-        'last_sent_at',
+        'endpoint',
+        'public_key',
+        'auth_token',
+        'content_encoding',
+        'user_agent',
+        'device_label',
+        'last_seen_at',
     ];
 
     protected $casts = [
-        'enabled' => 'boolean',
-        'preferred_weekday' => 'integer',
-        'last_sent_at' => 'datetime',
+        'last_seen_at' => 'datetime',
     ];
 
     public function user(): BelongsTo

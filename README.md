@@ -36,6 +36,11 @@ Minimal Laravel 12 + Inertia + React experience to log how you feel, keep histor
 4. **Environment**: Copy `.env.example`, set `APP_ENV=production`, and configure Postgres credentials backed by a Vultr database or managed service.
 5. **Domain**: Target `mood.brendonbaugh.com` with a TLS certificate and force HTTPS in Nginx.
 
+## Scheduler
+
+- Run `php artisan mood:send-reminders` to dispatch any due reminders immediately.
+- Add the scheduler cron: `* * * * * php /path/to/artisan schedule:run >> /dev/null 2>&1` so reminders can fire on the configured cadence.
+
 ## Commands
 
 - `php artisan migrate --seed`

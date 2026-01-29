@@ -24,6 +24,9 @@ class SettingsController extends Controller
                 'preferred_weekday' => $settings->preferred_weekday,
                 'timezone' => $settings->timezone,
             ],
+            'pushStatus' => [
+                'hasSubscription' => $user->pushSubscriptions()->exists(),
+            ],
         ]);
     }
 

@@ -19,7 +19,15 @@ createInertiaApp({
 
         root.render(<App {...props} />);
     },
-    progress: {
-        color: '#4B5563',
-    },
-});
+        progress: {
+            color: '#4B5563',
+        },
+    });
+
+if (typeof navigator !== 'undefined' && 'serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js').catch(() => {
+            /* ignore registration failures */
+        });
+    });
+}

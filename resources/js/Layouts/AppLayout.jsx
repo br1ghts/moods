@@ -23,8 +23,8 @@ export default function AppLayout({ children }) {
                             <span className="text-2xl">🌤</span>
                             <span>Mood Tracker</span>
                             <span className="text-xs text-slate-500">
-                                By Brendon Baugh
-                            </span>
+                               By Brendon Baugh</span>
+
                         </Link>
 
 
