@@ -30,7 +30,13 @@ class MoodEntryController extends Controller
                 ],
                 'intensity' => $entry->intensity,
                 'notes' => $entry->notes,
-                'occurred_at' => $entry->occurred_at->timezone($timezone)->toIso8601String(),
+                'occurred_at' => $entry->occurred_at->copy()->tz($timezone)->toIso8601String(),
+                'occurred_at_iso_utc' => $entry->occurred_at->copy()->utc()->toIso8601String(),
+                'occurred_at_local' => $entry->occurred_at->copy()->tz($timezone)->toIso8601String(),
+                'occurred_at_human' => $entry->occurred_at->copy()->tz($timezone)->format('M j \\a\\t g:ia'),
+                'created_at_iso_utc' => $entry->created_at?->copy()->utc()->toIso8601String(),
+                'created_at_local' => $entry->created_at?->copy()->tz($timezone)->toIso8601String(),
+                'created_at_human' => $entry->created_at?->copy()->tz($timezone)->format('M j \\a\\t g:ia'),
             ]);
 
         return Inertia::render('Log', [
@@ -75,8 +81,14 @@ class MoodEntryController extends Controller
                 ],
                 'notes' => $entry->notes,
                 'intensity' => $entry->intensity,
-                'occurred_at' => $entry->occurred_at->timezone($timezone)->toIso8601String(),
-                'date' => $entry->occurred_at->timezone($timezone)->toDateString(),
+                'occurred_at' => $entry->occurred_at->copy()->tz($timezone)->toIso8601String(),
+                'occurred_at_iso_utc' => $entry->occurred_at->copy()->utc()->toIso8601String(),
+                'occurred_at_local' => $entry->occurred_at->copy()->tz($timezone)->toIso8601String(),
+                'occurred_at_human' => $entry->occurred_at->copy()->tz($timezone)->format('M j \\a\\t g:ia'),
+                'created_at_iso_utc' => $entry->created_at?->copy()->utc()->toIso8601String(),
+                'created_at_local' => $entry->created_at?->copy()->tz($timezone)->toIso8601String(),
+                'created_at_human' => $entry->created_at?->copy()->tz($timezone)->format('M j \\a\\t g:ia'),
+                'date' => $entry->occurred_at->copy()->tz($timezone)->toDateString(),
             ]);
 
         $grouped = $mapped

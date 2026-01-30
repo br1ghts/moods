@@ -214,7 +214,11 @@ export default function Log({ moods, recentEntries }) {
                                             {entry.mood.label}
                                         </div>
                                         <div className="text-xs text-slate-500">
-                                            {formatRecentEntry(entry.occurred_at)}
+                                            {entry.occurred_at_human ??
+                                                formatRecentEntry(
+                                                    entry.occurred_at_local ??
+                                                        entry.occurred_at,
+                                                )}
                                         </div>
                                         {entry.notes && (
                                             <p className="mt-1 max-w-prose text-xs text-slate-500 whitespace-pre-line">
