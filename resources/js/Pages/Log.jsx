@@ -1,6 +1,7 @@
 import { router } from '@inertiajs/react';
 import { useMemo, useState } from 'react';
 import AppLayout from '@/Layouts/AppLayout';
+import MoodWheel from '@/Components/MoodWheel';
 
 const colorClasses = {
     yellow: 'bg-yellow-400',
@@ -104,7 +105,15 @@ export default function Log({ moods, recentEntries }) {
                 </div>
 
                 <form className="mt-6 space-y-5" onSubmit={handleSubmit}>
-                    <div className="grid gap-3 md:grid-cols-5">
+                    <div className="md:hidden">
+                        <MoodWheel
+                            moods={moods}
+                            value={selectedMood}
+                            onChange={setSelectedMood}
+                        />
+                    </div>
+
+                    <div className="hidden gap-3 md:grid md:grid-cols-5">
                         {moods.map((mood) => (
                             <button
                                 key={mood.id}
@@ -120,12 +129,12 @@ export default function Log({ moods, recentEntries }) {
                                 <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">
                                     {mood.label}
                                 </span>
-                                    <span
-                                        className={`h-2 w-6 rounded-full ${
-                                            colorClasses[mood.color] ??
-                                            'bg-slate-200'
-                                        }`}
-                                    />
+                                <span
+                                    className={`h-2 w-6 rounded-full ${
+                                        colorClasses[mood.color] ??
+                                        'bg-slate-200'
+                                    }`}
+                                />
                             </button>
                         ))}
                     </div>
