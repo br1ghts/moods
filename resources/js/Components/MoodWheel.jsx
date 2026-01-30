@@ -47,14 +47,13 @@ export default function MoodWheel({ moods, value, onChange }) {
         }
 
         return clamp(
-            Math.round((scrollTop - SPACER_HEIGHT_PX) / ITEM_HEIGHT_PX),
+            Math.round(scrollTop / ITEM_HEIGHT_PX),
             0,
             moods.length - 1,
         );
     };
 
-    const scrollTopForIndex = (index) =>
-        SPACER_HEIGHT_PX + index * ITEM_HEIGHT_PX;
+    const scrollTopForIndex = (index) => index * ITEM_HEIGHT_PX;
 
     const scrollToIndex = (index, { behavior } = {}) => {
         const node = scrollRef.current;
