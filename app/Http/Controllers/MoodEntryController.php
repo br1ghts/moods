@@ -49,9 +49,11 @@ class MoodEntryController extends Controller
 
     public function store(StoreMoodEntryRequest $request)
     {
-        $occurredAt = $request->get('occurred_at')
-            ? Carbon::parse($request->get('occurred_at'))
-            : now();
+        $timezone = $this->userTimezone();
+        $occurredAtInput = $request->get('occurred_at');
+        $occurredAt = $occurredAtInput
+            ? Carbon::parse($occurredAtInput)->tz($timezone)
+            : Carbon::now($timezone);
 
         $request->user()->moodEntries()->create([
             'mood_id' => $request->input('mood_id'),

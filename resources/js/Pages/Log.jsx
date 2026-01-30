@@ -41,13 +41,25 @@ export default function Log({ moods, recentEntries }) {
     const [selectedMood, setSelectedMood] = useState(moods[0]?.id ?? null);
     const [intensity, setIntensity] = useState(3);
     const [notes, setNotes] = useState('');
-    const [occurredAt, setOccurredAt] = useState('');
     const [submitting, setSubmitting] = useState(false);
 
     const selectedMoodDetails = useMemo(
         () => moods.find((mood) => mood.id === selectedMood),
         [moods, selectedMood],
     );
+
+    const intensityDescriptor = useMemo(() => {
+        if (intensity <= 2) {
+            return 'low';
+        }
+        if (intensity === 3) {
+            return 'medium';
+        }
+
+        return 'high';
+    }, [intensity]);
+
+    const sliderProgress = ((intensity - 1) / (5 - 1)) * 100;
 
     const handleSubmit = (event) => {
         event.preventDefault();
@@ -58,17 +70,12 @@ export default function Log({ moods, recentEntries }) {
 
         setSubmitting(true);
 
-        const occurredAtIso = occurredAt
-            ? new Date(occurredAt).toISOString()
-            : null;
-
         router.post(
             route('mood-entries.store'),
             {
                 mood_id: selectedMood,
                 intensity,
                 notes,
-                ...(occurredAtIso ? { occurred_at: occurredAtIso } : {}),
             },
             {
                 preserveScroll: true,
@@ -139,49 +146,83 @@ export default function Log({ moods, recentEntries }) {
                         ))}
                     </div>
 
-                    <div className="space-y-3">
-                        <label className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-                            Intensity (1–5)
-                        </label>
-                        <input
-                            type="range"
-                            min={1}
-                            max={5}
-                            value={intensity}
-                            onChange={(event) =>
-                                setIntensity(Number(event.currentTarget.value))
-                            }
-                            className="w-full"
-                        />
-                        <div className="text-sm text-slate-500">
-                            Feeling level: {intensity}
+                    <div className="space-y-4">
+                        <div className="flex flex-col gap-2">
+
+                            <div className="flex flex-wrap items-center justify-between gap-2">
+                                <p className="text-lg font-semibold text-slate-900">
+                                    Intensity: {intensity} / 5{' '}
+                                    <span className="text-sm font-normal uppercase tracking-wide text-slate-400">
+                                        ({intensityDescriptor})
+                                    </span>
+                                </p>
+                                <p className="text-xs text-slate-400">
+                                    Use arrow keys or drag the slider
+                                </p>
+                            </div>
+                        </div>
+
+                        <div className="relative">
+                            <input
+                                type="range"
+                                min={1}
+                                max={5}
+                                step={1}
+                                value={intensity}
+                                aria-label="Intensity slider"
+                                onChange={(event) =>
+                                    setIntensity(
+                                        Number(event.currentTarget.value),
+                                    )
+                                }
+                                className="range-slider"
+                                style={{
+                                    '--range-progress': `${sliderProgress}%`,
+                                }}
+                            />
+                            <div className="pointer-events-none mt-3 flex flex-col gap-1">
+                                <div className="flex">
+                                    {Array.from({ length: 5 }).map((_, index) => (
+                                        <span
+                                            key={`tick-${index}`}
+                                            className="flex-1 flex justify-center"
+                                        >
+                                            <span className="h-1 w-3 rounded-full bg-slate-200" />
+                                        </span>
+                                    ))}
+                                </div>
+                                <div className="flex text-[10px] font-semibold uppercase tracking-[0.3em] text-slate-400">
+                                    {Array.from({ length: 5 }).map(
+                                        (_, index) => (
+                                            <span
+                                                key={`label-${index}`}
+                                                className="flex-1 text-center"
+                                            >
+                                                {index + 1}
+                                            </span>
+                                        ),
+                                    )}
+                                </div>
+                            </div>
                         </div>
                     </div>
 
-                    <div className="grid gap-4 md:grid-cols-2">
-                        <label className="flex flex-col gap-2 text-sm text-slate-600">
-                            <span>When did this happen?</span>
-                            <input
-                                type="datetime-local"
-                                value={occurredAt}
-                                onChange={(event) =>
-                                    setOccurredAt(event.target.value)
-                                }
-                                className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2 text-sm text-slate-700 outline-none focus:border-slate-400"
-                            />
+                    <div className="space-y-2">
+                        <label className="text-sm font-semibold text-slate-600">
+                            Notes (optional)
                         </label>
-                        <label className="flex flex-col gap-2 text-sm text-slate-600">
-                            <span>Notes (optional)</span>
-                            <textarea
-                                value={notes}
-                                onChange={(event) =>
-                                    setNotes(event.target.value)
-                                }
-                                rows={3}
-                                className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700 outline-none focus:border-slate-400"
-                                placeholder="One line to remember what shifted the vibe."
-                            />
-                        </label>
+                        <textarea
+                            value={notes}
+                            onChange={(event) =>
+                                setNotes(event.target.value)
+                            }
+                            rows={3}
+                            className="w-full min-h-[140px] rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4 text-sm text-slate-700 outline-none transition focus:border-slate-400 focus:ring-2 focus:ring-slate-100 focus:ring-offset-0"
+                            placeholder="One line to remember what shifted the vibe."
+                        />
+                        <p className="text-xs text-slate-400">
+                            Optional note to remember context or trigger.
+                        </p>
                     </div>
 
                     <div className="flex justify-end">
