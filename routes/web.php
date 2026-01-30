@@ -1,5 +1,7 @@
 <?php
 
+use App\Http\Controllers\Admin\AdminDashboardController;
+use App\Http\Controllers\Admin\AdminEmotionsController;
 use App\Http\Controllers\Auth\GoogleController;
 use App\Http\Controllers\InsightsController;
 use App\Http\Controllers\MoodEntryController;
@@ -31,5 +33,20 @@ Route::middleware('auth')->group(function () {
     Route::get('/push/vapid-public-key', [PushController::class, 'vapidPublicKey'])->name('push.vapid-public-key');
     Route::post('/push/test', [PushController::class, 'test'])->name('push.test');
 });
+
+Route::middleware(['auth', 'admin.email'])
+    ->prefix('admin')
+    ->name('admin.')
+    ->group(function () {
+        Route::get('/', [AdminDashboardController::class, 'index'])->name('dashboard');
+        Route::get('/emotions', [AdminEmotionsController::class, 'index'])->name('emotions.index');
+        Route::get('/emotions/create', [AdminEmotionsController::class, 'create'])->name('emotions.create');
+        Route::post('/emotions', [AdminEmotionsController::class, 'store'])->name('emotions.store');
+        Route::get('/emotions/{emotion}/edit', [AdminEmotionsController::class, 'edit'])->name('emotions.edit');
+        Route::put('/emotions/{emotion}', [AdminEmotionsController::class, 'update'])->name('emotions.update');
+        Route::patch('/emotions/{emotion}/toggle', [AdminEmotionsController::class, 'toggle'])->name('emotions.toggle');
+        Route::get('/emotions/export', [AdminEmotionsController::class, 'export'])->name('emotions.export');
+        Route::post('/emotions/import', [AdminEmotionsController::class, 'import'])->name('emotions.import');
+    });
 
 require __DIR__.'/auth.php';

@@ -14,7 +14,9 @@ class MoodEntryController extends Controller
     {
         $timezone = $this->userTimezone();
         $user = request()->user();
-        $moods = Mood::orderBy('sort_order')->get(['id', 'key', 'label', 'emoji', 'color']);
+        $moods = Mood::where('is_active', true)
+            ->orderBy('sort_order')
+            ->get(['id', 'key', 'label', 'emoji', 'color']);
 
         $recentEntries = $user->moodEntries()
             ->with('mood')

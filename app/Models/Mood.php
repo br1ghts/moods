@@ -8,7 +8,18 @@ use App\Models\MoodEntry;
 
 class Mood extends Model
 {
-    protected $fillable = ['key', 'label', 'emoji', 'color', 'sort_order'];
+    protected $fillable = [
+        'key',
+        'label',
+        'emoji',
+        'color',
+        'sort_order',
+        'is_active',
+    ];
+
+    protected $casts = [
+        'is_active' => 'boolean',
+    ];
 
     public function entries(): HasMany
     {
