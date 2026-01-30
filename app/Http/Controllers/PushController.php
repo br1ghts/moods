@@ -2,7 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Services\PushService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 
 class PushController extends Controller
 {
@@ -37,6 +39,11 @@ class PushController extends Controller
             'last_seen_at' => now(),
         ]);
 
+        Log::info('push.subscribe', [
+            'user_id' => $user->id,
+            'endpoint' => $data['endpoint'],
+        ]);
+
         return response()->json(['status' => 'ok']);
     }
 
@@ -51,6 +58,35 @@ class PushController extends Controller
             ->where('endpoint', $request->input('endpoint'))
             ->delete();
 
+        Log::info('push.unsubscribe', [
+            'user_id' => $request->user()?->id,
+            'endpoint' => $request->input('endpoint'),
+        ]);
+
         return response()->json(['status' => 'ok']);
+    }
+
+    public function test(Request $request, PushService $pushService)
+    {
+        $user = $request->user();
+
+        $result = $pushService->sendToUser(
+            $user,
+            'Mood Tracker test',
+            'If you can read this, web push is working.',
+            ['url' => '/settings'],
+        );
+
+        Log::info('push.test', [
+            'user_id' => $user->id,
+            ...$result,
+        ]);
+
+        return response()->json([
+            'ok' => true,
+            'sent' => $result['sent'] ?? 0,
+            'failed' => $result['failed'] ?? 0,
+            'expired' => $result['expired'] ?? 0,
+        ]);
     }
 }

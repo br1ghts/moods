@@ -29,6 +29,7 @@ Route::middleware('auth')->group(function () {
     Route::post('/push/subscribe', [PushController::class, 'subscribe'])->name('push.subscribe');
     Route::delete('/push/unsubscribe', [PushController::class, 'unsubscribe'])->name('push.unsubscribe');
     Route::get('/push/vapid-public-key', [PushController::class, 'vapidPublicKey'])->name('push.vapid-public-key');
+    Route::post('/push/test', [PushController::class, 'test'])->name('push.test');
 });
 
 require __DIR__.'/auth.php';

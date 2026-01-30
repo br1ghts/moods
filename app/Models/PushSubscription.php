@@ -17,10 +17,13 @@ class PushSubscription extends Model
         'user_agent',
         'device_label',
         'last_seen_at',
+        'last_push_at',
+        'last_push_error',
     ];
 
     protected $casts = [
         'last_seen_at' => 'datetime',
+        'last_push_at' => 'datetime',
     ];
 
     public function user(): BelongsTo

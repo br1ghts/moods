@@ -16,6 +16,18 @@ class SettingsController extends Controller
             'timezone' => 'America/Chicago',
         ]);
 
+        $subscriptions = $user->pushSubscriptions()
+            ->latest('last_seen_at')
+            ->get()
+            ->map(fn ($subscription) => [
+                'id' => $subscription->id,
+                'endpoint' => $this->truncateEndpoint($subscription->endpoint),
+                'device_label' => $subscription->device_label,
+                'last_seen_at' => $subscription->last_seen_at,
+                'last_push_at' => $subscription->last_push_at,
+                'last_push_error' => $subscription->last_push_error,
+            ]);
+
         return Inertia::render('Settings', [
             'notificationSettings' => [
                 'enabled' => $settings->enabled,
@@ -25,7 +37,9 @@ class SettingsController extends Controller
                 'timezone' => $settings->timezone,
             ],
             'pushStatus' => [
-                'hasSubscription' => $user->pushSubscriptions()->exists(),
+                'hasSubscription' => $subscriptions->isNotEmpty(),
+                'subscriptionsCount' => $subscriptions->count(),
+                'subscriptions' => $subscriptions,
             ],
         ]);
     }
@@ -48,5 +62,16 @@ class SettingsController extends Controller
         return redirect()
             ->route('settings')
             ->with('success', 'Notification preferences updated.');
+    }
+
+    protected function truncateEndpoint(string $endpoint): string
+    {
+        $length = strlen($endpoint);
+
+        if ($length <= 64) {
+            return $endpoint;
+        }
+
+        return substr($endpoint, 0, 38).'…'.substr($endpoint, -22);
     }
 }
