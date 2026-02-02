@@ -102,10 +102,10 @@ export default function Log({ moods, recentEntries }) {
                     </div>
                     {selectedMoodDetails && (
                         <div className="flex flex-col items-end text-sm text-slate-500">
-                            <span>{selectedMoodDetails.label}</span>
+                            {/* <span>{selectedMoodDetails.label}</span> */}
                             <span>
                                 {selectedMoodDetails.emoji} ·{' '}
-                                Mood {selectedMoodDetails.key}
+                                {selectedMoodDetails.key}
                             </span>
                         </div>
                     )}
