@@ -2,7 +2,7 @@ import { Link, usePage } from '@inertiajs/react';
 import { useEffect, useRef, useState } from 'react';
 
 export default function AppLayout({ children }) {
-    const { auth, csrf } = usePage().props;
+    const { auth, csrf, flash } = usePage().props;
     const user = auth.user;
     const isAdmin = user?.email === 'brendonbaughray@gmail.com';
     const [isOpen, setIsOpen] = useState(false);
@@ -209,6 +209,14 @@ export default function AppLayout({ children }) {
                     </nav>
                 </div>
             </div>
+
+            {flash?.error && (
+                <div className="mx-auto mt-4 max-w-6xl px-4">
+                    <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-2 text-sm text-rose-700">
+                        {flash.error}
+                    </div>
+                </div>
+            )}
 
             <main className="mx-auto max-w-6xl px-4 py-6">{children}</main>
         </div>

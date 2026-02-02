@@ -5,6 +5,7 @@ export default function AdminLayout({ children }) {
 
     const tabs = [
         { label: 'Overview', href: route('admin.dashboard'), name: 'admin.dashboard' },
+        { label: 'Members', href: route('admin.members.index'), name: 'admin.members.index' },
         { label: 'Emotions', href: route('admin.emotions.index'), name: 'admin.emotions.index' },
     ];
 
@@ -35,11 +36,18 @@ export default function AdminLayout({ children }) {
                 </div>
             </header>
 
-            {flash?.success && (
+            {(flash?.success || flash?.error) && (
                 <div className="mx-auto mt-4 max-w-6xl px-4">
-                    <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-2 text-sm text-emerald-700">
-                        {flash.success}
-                    </div>
+                    {flash?.success && (
+                        <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-2 text-sm text-emerald-700">
+                            {flash.success}
+                        </div>
+                    )}
+                    {flash?.error && (
+                        <div className="mt-2 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-2 text-sm text-rose-700">
+                            {flash.error}
+                        </div>
+                    )}
                 </div>
             )}
 

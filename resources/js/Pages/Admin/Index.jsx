@@ -1,7 +1,7 @@
 import AdminLayout from '@/Layouts/AdminLayout';
 import { Link } from '@inertiajs/react';
 
-export default function AdminIndex({ emotionCount }) {
+export default function AdminIndex({ emotionCount, memberCount, activeMemberCount, moodEntryCount, pushDeviceCount }) {
     return (
         <AdminLayout>
             <section className="rounded-3xl border border-slate-200 bg-white/80 p-6 shadow-md shadow-slate-900/5">
@@ -13,10 +13,26 @@ export default function AdminIndex({ emotionCount }) {
                         </p>
                     </div>
 
-                    <div className="grid gap-4 rounded-2xl border border-slate-100 bg-slate-50 p-4 text-sm text-slate-600 sm:grid-cols-2">
+                    <div className="grid gap-4 rounded-2xl border border-slate-100 bg-slate-50 p-4 text-sm text-slate-600 sm:grid-cols-2 lg:grid-cols-3">
                         <div>
                             <p className="text-xs uppercase tracking-[0.3em] text-slate-400">Total emotions</p>
                             <p className="text-3xl font-semibold text-slate-900">{emotionCount}</p>
+                        </div>
+                        <div>
+                            <p className="text-xs uppercase tracking-[0.3em] text-slate-400">Total members</p>
+                            <p className="text-3xl font-semibold text-slate-900">{memberCount}</p>
+                        </div>
+                        <div>
+                            <p className="text-xs uppercase tracking-[0.3em] text-slate-400">Active members</p>
+                            <p className="text-3xl font-semibold text-slate-900">{activeMemberCount}</p>
+                        </div>
+                        <div>
+                            <p className="text-xs uppercase tracking-[0.3em] text-slate-400">Mood entries</p>
+                            <p className="text-3xl font-semibold text-slate-900">{moodEntryCount}</p>
+                        </div>
+                        <div>
+                            <p className="text-xs uppercase tracking-[0.3em] text-slate-400">Push devices</p>
+                            <p className="text-3xl font-semibold text-slate-900">{pushDeviceCount}</p>
                         </div>
                         <div>
                             <p className="text-xs uppercase tracking-[0.3em] text-slate-400">What you can do</p>

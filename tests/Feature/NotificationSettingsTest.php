@@ -4,12 +4,14 @@ namespace Tests\Feature;
 
 use App\Models\NotificationSetting;
 use App\Models\User;
+use Carbon\Carbon;
 use Tests\TestCase;
 
 class NotificationSettingsTest extends TestCase
 {
     public function test_can_switch_to_hourly_even_with_seconds_in_preferred_time(): void
     {
+        Carbon::setTestNow(Carbon::create(2026, 2, 2, 16, 45, 0, 'UTC'));
         $user = User::factory()->create();
 
         NotificationSetting::create([
@@ -40,5 +42,10 @@ class NotificationSettingsTest extends TestCase
             'preferred_time' => null,
             'preferred_weekday' => null,
         ]);
+
+        $setting = NotificationSetting::where('user_id', $user->id)->firstOrFail();
+        $this->assertNotNull($setting->next_reminder_at);
+
+        Carbon::setTestNow();
     }
 }

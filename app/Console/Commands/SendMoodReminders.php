@@ -17,13 +17,16 @@ class SendMoodReminders extends Command
     {
         $now = now();
 
-        Log::info('reminders.send.tick', [
-            'at' => $now->toIso8601String(),
+        Log::info('[REMINDERS] schedule.start', [
+            'now_server' => $now->toIso8601String(),
+            'app_tz' => config('app.timezone'),
         ]);
 
-        $dispatcher->notifyHourlyUsers();
+        $hourly = $dispatcher->notifyHourlyUsers();
 
         $dailyTriggered = 0;
+        $dailyTargets = 0;
+        $dailyDevices = 0;
         foreach ($dispatcher->dailyScheduleDefinitions() as $definition) {
             $timezone = $definition['timezone'];
             $localNow = Carbon::now($timezone);
@@ -32,11 +35,15 @@ class SendMoodReminders extends Command
                 continue;
             }
 
-            $dispatcher->notifyDailyUsers($timezone, $definition['query_time']);
+            $result = $dispatcher->notifyDailyUsers($timezone, $definition['query_time']);
+            $dailyTargets += $result['targets'];
+            $dailyDevices += $result['devices'];
             $dailyTriggered++;
         }
 
         $weeklyTriggered = 0;
+        $weeklyTargets = 0;
+        $weeklyDevices = 0;
         foreach ($dispatcher->weeklyScheduleDefinitions() as $definition) {
             $timezone = $definition['timezone'];
             $weekday = (int) $definition['preferred_weekday'];
@@ -51,11 +58,28 @@ class SendMoodReminders extends Command
                 continue;
             }
 
-            $dispatcher->notifyWeeklyUsers($timezone, $weekday, $definition['query_time']);
+            $result = $dispatcher->notifyWeeklyUsers($timezone, $weekday, $definition['query_time']);
+            $weeklyTargets += $result['targets'];
+            $weeklyDevices += $result['devices'];
             $weeklyTriggered++;
         }
 
         $this->info("Reminders checked. daily_groups={$dailyTriggered} weekly_groups={$weeklyTriggered}");
+
+        Log::info('[REMINDERS] schedule.done', [
+            'now_server' => now()->toIso8601String(),
+            'app_tz' => config('app.timezone'),
+            'targets' => [
+                'hourly' => $hourly['targets'] ?? 0,
+                'daily' => $dailyTargets,
+                'weekly' => $weeklyTargets,
+            ],
+            'devices' => [
+                'hourly' => $hourly['devices'] ?? 0,
+                'daily' => $dailyDevices,
+                'weekly' => $weeklyDevices,
+            ],
+        ]);
 
         return self::SUCCESS;
     }

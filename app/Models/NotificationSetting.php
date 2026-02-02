@@ -15,12 +15,14 @@ class NotificationSetting extends Model
         'preferred_weekday',
         'timezone',
         'last_sent_at',
+        'next_reminder_at',
     ];
 
     protected $casts = [
         'enabled' => 'boolean',
         'preferred_weekday' => 'integer',
         'last_sent_at' => 'datetime',
+        'next_reminder_at' => 'datetime',
     ];
 
     public function user(): BelongsTo

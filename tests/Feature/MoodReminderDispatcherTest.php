@@ -6,6 +6,7 @@ use App\Models\NotificationSetting;
 use App\Models\User;
 use App\Notifications\MoodReminderNotification;
 use App\Services\MoodReminderDispatcher;
+use Carbon\Carbon;
 use Illuminate\Support\Facades\Notification;
 use Tests\TestCase;
 
@@ -13,6 +14,7 @@ class MoodReminderDispatcherTest extends TestCase
 {
     public function test_hourly_dispatch_sends_notification_and_updates_last_sent(): void
     {
+        Carbon::setTestNow(Carbon::create(2026, 2, 2, 10, 0, 0, 'UTC'));
         Notification::fake();
 
         $user = User::factory()->create();
@@ -22,12 +24,15 @@ class MoodReminderDispatcherTest extends TestCase
             'enabled' => true,
             'cadence' => 'hourly',
             'timezone' => 'UTC',
+            'next_reminder_at' => now(),
         ]);
 
         app(MoodReminderDispatcher::class)->notifyHourlyUsers();
 
         Notification::assertSentTo($user, MoodReminderNotification::class);
         $this->assertNotNull(NotificationSetting::where('user_id', $user->id)->first()?->last_sent_at);
+
+        Carbon::setTestNow();
     }
 
     public function test_daily_dispatch_filters_by_timezone_and_time(): void

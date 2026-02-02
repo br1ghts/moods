@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\UpdateNotificationSettingsRequest;
+use Carbon\Carbon;
 use Inertia\Inertia;
 
 class SettingsController extends Controller
@@ -53,13 +54,25 @@ class SettingsController extends Controller
         $settings = $user->notificationSetting ?? $user->notificationSetting()->create();
 
         $data = $request->validated();
+        $enabled = $request->boolean('enabled');
+        $cadence = $data['cadence'];
+        $timezone = $data['timezone'];
+        $nextReminderAt = null;
+
+        if ($enabled && $cadence === 'hourly') {
+            $nextReminderAt = Carbon::now($timezone)
+                ->addHour()
+                ->startOfHour()
+                ->utc();
+        }
 
         $settings->fill([
-            'enabled' => $request->boolean('enabled'),
-            'cadence' => $data['cadence'],
+            'enabled' => $enabled,
+            'cadence' => $cadence,
             'preferred_time' => $data['preferred_time'] ?? null,
             'preferred_weekday' => $data['preferred_weekday'] ?? null,
-            'timezone' => $data['timezone'],
+            'timezone' => $timezone,
+            'next_reminder_at' => $nextReminderAt,
         ]);
 
         $settings->save();
