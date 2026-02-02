@@ -2,7 +2,6 @@ import { router } from '@inertiajs/react';
 import { useMemo, useState } from 'react';
 import AppLayout from '@/Layouts/AppLayout';
 import MoodWheel from '@/Components/MoodWheel';
-
 const colorClasses = {
     yellow: 'bg-yellow-400',
     emerald: 'bg-emerald-400',
@@ -156,9 +155,7 @@ export default function Log({ moods, recentEntries }) {
                                         ({intensityDescriptor})
                                     </span>
                                 </p>
-                                <p className="text-xs text-slate-400">
-                                    Use arrow keys or drag the slider
-                                </p>
+
                             </div>
                         </div>
 
