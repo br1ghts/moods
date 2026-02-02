@@ -189,22 +189,34 @@ const StatusNotice = ({ message, tone = 'info' }) => {
     );
 };
 
-const ChartLegend = ({ moods }) => (
-    <div className="flex flex-wrap gap-3 text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+const ChartLegend = ({ moods, activeKey, onHighlight }) => (
+    <div
+        className="flex flex-wrap gap-3 text-[11px] font-semibold uppercase tracking-wide text-slate-500"
+        onMouseLeave={() => onHighlight?.(null)}
+    >
         {moods.map((mood) => {
             const color = getMoodColor(mood.color);
+            const isActive = !activeKey || activeKey === mood.key;
 
             return (
-                <div
+                <button
                     key={mood.key}
-                    className="flex items-center gap-2 rounded-full border border-slate-200/70 bg-white/70 px-3 py-1"
+                    type="button"
+                    onMouseEnter={() => onHighlight?.(mood.key)}
+                    onFocus={() => onHighlight?.(mood.key)}
+                    onBlur={() => onHighlight?.(null)}
+                    className={`flex items-center gap-2 rounded-full border px-3 py-1 transition ${
+                        isActive
+                            ? 'border-slate-200/70 bg-white/80 text-slate-700'
+                            : 'border-slate-100 bg-white/60 text-slate-400 opacity-60'
+                    }`}
                 >
                     <span
                         className="h-2 w-2 rounded-full"
                         style={{ backgroundColor: color }}
                     />
                     <span>{mood.label}</span>
-                </div>
+                </button>
             );
         })}
     </div>
@@ -240,6 +252,7 @@ const InsightChart = ({
     onActive,
     onMouseLeave,
     moodLookup,
+    activeMoodKey,
 }) => {
     if (!data || data.length === 0) {
         return <StatusNotice message="Chart data is unavailable right now." tone="neutral" />;
@@ -247,11 +260,13 @@ const InsightChart = ({
 
     const barsOrAreas = moods.map((mood) => {
         const color = getMoodColor(mood.color);
+        const isActive = !activeMoodKey || activeMoodKey === mood.key;
         const commonProps = {
             key: mood.key,
             dataKey: mood.key,
             stackId: 'moods',
             fill: color,
+            fillOpacity: isActive ? 0.9 : 0.2,
         };
         if (chartType === 'area') {
             return (
@@ -259,7 +274,8 @@ const InsightChart = ({
                     {...commonProps}
                     stroke={color}
                     strokeWidth={2}
-                    fillOpacity={0.85}
+                    fillOpacity={isActive ? 0.85 : 0.15}
+                    strokeOpacity={isActive ? 1 : 0.3}
                     type="monotone"
                 />
             );
@@ -414,6 +430,8 @@ export default function Insights() {
     const [dailyRange, setDailyRange] = useState(14);
     const [activeDailyBucket, setActiveDailyBucket] = useState(null);
     const [activeHourlyBucket, setActiveHourlyBucket] = useState(null);
+    const [highlightedDailyMood, setHighlightedDailyMood] = useState(null);
+    const [highlightedHourlyMood, setHighlightedHourlyMood] = useState(null);
 
     useEffect(() => {
         let isMounted = true;
@@ -627,8 +645,8 @@ export default function Insights() {
                                         />
                                     }
                                 >
-                                    <div className="mt-5 grid gap-4 lg:grid-cols-[minmax(0,3fr)_minmax(0,1fr)]">
-                                        <div className="min-h-[320px] rounded-2xl border border-slate-100 bg-white/70 p-3">
+                                    <div className="mt-5 grid gap-4">
+                                        <div className="min-h-[320px] w-full rounded-2xl border border-slate-100 bg-white/70 p-3">
                                             <InsightChart
                                                 data={dailyData}
                                                 moods={moods}
@@ -638,17 +656,23 @@ export default function Insights() {
                                                 onActive={handleDailyActive}
                                                 onMouseLeave={() => setActiveDailyBucket(null)}
                                                 moodLookup={moodLookup}
+                                                activeMoodKey={highlightedDailyMood}
                                             />
                                         </div>
-                                        <InsightPanel
-                                            activeBucket={activeDailyBucket}
-                                            moods={moods}
-                                            showIntensity
-                                            emptyMessage="Hover or tap a day to see details."
-                                        />
+                                        {activeDailyBucket ? (
+                                            <InsightPanel
+                                                activeBucket={activeDailyBucket}
+                                                moods={moods}
+                                                showIntensity
+                                            />
+                                        ) : null}
                                     </div>
                                     <div className="mt-5">
-                                        <ChartLegend moods={moods} />
+                                        <ChartLegend
+                                            moods={moods}
+                                            activeKey={highlightedDailyMood}
+                                            onHighlight={setHighlightedDailyMood}
+                                        />
                                     </div>
                                 </ChartCard>
 
@@ -668,12 +692,21 @@ export default function Insights() {
                                                 onActive={handleHourlyActive}
                                                 onMouseLeave={() => setActiveHourlyBucket(null)}
                                                 moodLookup={moodLookup}
+                                                activeMoodKey={highlightedHourlyMood}
                                             />
                                         </div>
-                                        <InsightPanel
-                                            activeBucket={activeHourlyBucket}
+                                        {activeHourlyBucket ? (
+                                            <InsightPanel
+                                                activeBucket={activeHourlyBucket}
+                                                moods={moods}
+                                            />
+                                        ) : null}
+                                    </div>
+                                    <div className="mt-4">
+                                        <ChartLegend
                                             moods={moods}
-                                            emptyMessage="Hover or tap an hour to see details."
+                                            activeKey={highlightedHourlyMood}
+                                            onHighlight={setHighlightedHourlyMood}
                                         />
                                     </div>
                                 </ChartCard>
