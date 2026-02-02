@@ -52,12 +52,14 @@ class SettingsController extends Controller
         $user = $request->user();
         $settings = $user->notificationSetting ?? $user->notificationSetting()->create();
 
+        $data = $request->validated();
+
         $settings->fill([
             'enabled' => $request->boolean('enabled'),
-            'cadence' => $request->input('cadence'),
-            'preferred_time' => $request->input('preferred_time'),
-            'preferred_weekday' => $request->input('preferred_weekday'),
-            'timezone' => $request->input('timezone'),
+            'cadence' => $data['cadence'],
+            'preferred_time' => $data['preferred_time'] ?? null,
+            'preferred_weekday' => $data['preferred_weekday'] ?? null,
+            'timezone' => $data['timezone'],
         ]);
 
         $settings->save();

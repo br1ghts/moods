@@ -162,7 +162,7 @@ export default function Log({ moods, recentEntries }) {
                             </div>
                         </div>
 
-                        <div className="relative">
+                        <div className="relative range-slider-wrapper">
                             <input
                                 type="range"
                                 min={1}
@@ -180,28 +180,32 @@ export default function Log({ moods, recentEntries }) {
                                     '--range-progress': `${sliderProgress}%`,
                                 }}
                             />
-                            <div className="pointer-events-none mt-3 flex flex-col gap-1">
-                                <div className="flex">
+                            <div className="range-slider-ticks pointer-events-none mt-3 flex flex-col gap-1">
+                                <div className="range-slider-tick-row">
                                     {Array.from({ length: 5 }).map((_, index) => (
                                         <span
                                             key={`tick-${index}`}
-                                            className="flex-1 flex justify-center"
+                                            className="range-slider-tick"
+                                            style={{
+                                                left: `${(index / 4) * 100}%`,
+                                            }}
                                         >
                                             <span className="h-1 w-3 rounded-full bg-slate-200" />
                                         </span>
                                     ))}
                                 </div>
-                                <div className="flex text-[10px] font-semibold uppercase tracking-[0.3em] text-slate-400">
-                                    {Array.from({ length: 5 }).map(
-                                        (_, index) => (
-                                            <span
-                                                key={`label-${index}`}
-                                                className="flex-1 text-center"
-                                            >
-                                                {index + 1}
-                                            </span>
-                                        ),
-                                    )}
+                                <div className="range-slider-label-row text-[10px] font-semibold uppercase tracking-[0.3em] text-slate-400">
+                                    {Array.from({ length: 5 }).map((_, index) => (
+                                        <span
+                                            key={`label-${index}`}
+                                            className="range-slider-label"
+                                            style={{
+                                                left: `${(index / 4) * 100}%`,
+                                            }}
+                                        >
+                                            {index + 1}
+                                        </span>
+                                    ))}
                                 </div>
                             </div>
                         </div>

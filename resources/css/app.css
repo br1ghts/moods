@@ -2,9 +2,14 @@
 @tailwind components;
 @tailwind utilities;
 
+.range-slider-wrapper {
+    --thumb-size: 1.5rem;
+}
+
 .range-slider {
     --range-progress: 50%;
-    width: 100%;
+    width: calc(100% - var(--thumb-size));
+    margin-left: calc(var(--thumb-size) / 2);
     height: 0.5rem;
     background: transparent;
     border-radius: 9999px;
@@ -43,19 +48,19 @@
 
 .range-slider::-webkit-slider-thumb {
     appearance: none;
-    width: 1.5rem;
-    height: 1.5rem;
+    width: var(--thumb-size);
+    height: var(--thumb-size);
     border-radius: 9999px;
     background: #0f172a;
     border: 4px solid #ffffff;
     box-shadow: 0 6px 14px rgba(15, 23, 42, 0.35);
-    margin-top: -0.55rem;
+    margin-top: calc((0.5rem - var(--thumb-size)) / 2);
     transition: transform 120ms ease, box-shadow 120ms ease;
 }
 
 .range-slider::-moz-range-thumb {
-    width: 1.4rem;
-    height: 1.4rem;
+    width: var(--thumb-size);
+    height: var(--thumb-size);
     border-radius: 9999px;
     background: #0f172a;
     border: 4px solid #ffffff;
@@ -79,4 +84,30 @@
 
 .range-slider::-moz-focus-outer {
     border: 0;
+}
+
+.range-slider-ticks {
+    width: calc(100% - var(--thumb-size));
+    margin-left: calc(var(--thumb-size) / 2);
+}
+
+.range-slider-tick-row,
+.range-slider-label-row {
+    position: relative;
+    height: 1rem;
+}
+
+.range-slider-tick,
+.range-slider-label {
+    position: absolute;
+    transform: translateX(-50%);
+}
+
+.range-slider-tick {
+    top: 0.35rem;
+}
+
+.range-slider-label {
+    top: 0;
+    white-space: nowrap;
 }

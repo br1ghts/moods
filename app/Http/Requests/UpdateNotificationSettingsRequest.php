@@ -29,4 +29,34 @@ class UpdateNotificationSettingsRequest extends FormRequest
             'timezone' => ['required', 'timezone'],
         ];
     }
+
+    protected function prepareForValidation(): void
+    {
+        $cadence = $this->input('cadence');
+        $preferredTime = $this->input('preferred_time');
+        $preferredWeekday = $this->input('preferred_weekday');
+
+        if (is_string($preferredTime)) {
+            $trimmed = trim($preferredTime);
+            if ($trimmed === '') {
+                $preferredTime = null;
+            } elseif (preg_match('/^\d{2}:\d{2}:\d{2}$/', $trimmed) === 1) {
+                $preferredTime = substr($trimmed, 0, 5);
+            } else {
+                $preferredTime = $trimmed;
+            }
+        }
+
+        if ($cadence === 'hourly') {
+            $preferredTime = null;
+            $preferredWeekday = null;
+        } elseif ($cadence === 'daily') {
+            $preferredWeekday = null;
+        }
+
+        $this->merge([
+            'preferred_time' => $preferredTime,
+            'preferred_weekday' => $preferredWeekday,
+        ]);
+    }
 }
