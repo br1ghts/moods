@@ -8,6 +8,19 @@ use Illuminate\Support\Facades\Log;
 
 class PushController extends Controller
 {
+    public function index(Request $request)
+    {
+        $subscriptions = $request->user()
+            ->pushSubscriptions()
+            ->latest('last_seen_at')
+            ->get()
+            ->map(fn ($subscription) => $this->formatSubscription($subscription));
+
+        return response()->json([
+            'subscriptions' => $subscriptions,
+        ]);
+    }
+
     public function vapidPublicKey(Request $request)
     {
         return response()->json([
@@ -66,6 +79,24 @@ class PushController extends Controller
         return response()->json(['status' => 'ok']);
     }
 
+    public function destroy(Request $request, int $pushSubscription)
+    {
+        $subscription = \App\Models\PushSubscription::query()->findOrFail($pushSubscription);
+
+        if ($subscription->user_id !== $request->user()?->id) {
+            abort(403);
+        }
+
+        $subscription->delete();
+
+        Log::info('push.destroy', [
+            'user_id' => $request->user()?->id,
+            'subscription_id' => $pushSubscription,
+        ]);
+
+        return response()->json(['status' => 'ok']);
+    }
+
     public function test(Request $request, PushService $pushService)
     {
         $user = $request->user();
@@ -88,5 +119,31 @@ class PushController extends Controller
             'failed' => $result['failed'] ?? 0,
             'expired' => $result['expired'] ?? 0,
         ]);
+    }
+
+    protected function formatSubscription($subscription): array
+    {
+        return [
+            'id' => $subscription->id,
+            'endpoint' => $subscription->endpoint,
+            'endpoint_display' => $this->truncateEndpoint($subscription->endpoint),
+            'device_label' => $subscription->device_label,
+            'user_agent' => $subscription->user_agent,
+            'created_at' => $subscription->created_at,
+            'last_seen_at' => $subscription->last_seen_at,
+            'last_push_at' => $subscription->last_push_at,
+            'last_push_error' => $subscription->last_push_error,
+        ];
+    }
+
+    protected function truncateEndpoint(string $endpoint): string
+    {
+        $length = strlen($endpoint);
+
+        if ($length <= 64) {
+            return $endpoint;
+        }
+
+        return substr($endpoint, 0, 38).'…'.substr($endpoint, -22);
     }
 }

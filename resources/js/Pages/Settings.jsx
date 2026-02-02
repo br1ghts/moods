@@ -46,8 +46,6 @@ function urlBase64ToUint8Array(base64String) {
 
 export default function Settings({ notificationSettings, pushStatus = {} }) {
     const {
-        hasSubscription = false,
-        subscriptionsCount = 0,
         subscriptions = [],
     } = pushStatus;
 
@@ -64,7 +62,9 @@ export default function Settings({ notificationSettings, pushStatus = {} }) {
         typeof Notification !== 'undefined' ? Notification.permission : 'default',
     );
     const [registration, setRegistration] = useState(null);
-    const [subscribed, setSubscribed] = useState(hasSubscription);
+    const [subscribed, setSubscribed] = useState(false);
+    const [currentEndpoint, setCurrentEndpoint] = useState(null);
+    const [subscriptionList, setSubscriptionList] = useState(subscriptions);
     const [pushProcessing, setPushProcessing] = useState(false);
     const [pushError, setPushError] = useState('');
     const [testResult, setTestResult] = useState(null);
@@ -85,6 +85,7 @@ export default function Settings({ notificationSettings, pushStatus = {} }) {
                 .then((subscription) => {
                     if (subscription) {
                         setSubscribed(true);
+                        setCurrentEndpoint(subscription.endpoint);
                     }
                 })
                 .catch(() => {
@@ -153,6 +154,8 @@ export default function Settings({ notificationSettings, pushStatus = {} }) {
             await axios.post(route('push.subscribe'), payload);
 
             setSubscribed(true);
+            setCurrentEndpoint(subscription.endpoint);
+            await refreshSubscriptions();
         } catch (error) {
             setPushError(
                 error?.response?.data?.message ||
@@ -183,16 +186,28 @@ export default function Settings({ notificationSettings, pushStatus = {} }) {
         }
     };
 
-    const handleDisablePush = async () => {
-        if (!registration) {
-            return;
+    const resolveRegistration = async () => {
+        if (registration) {
+            return registration;
         }
 
+        if (typeof navigator === 'undefined' || !('serviceWorker' in navigator)) {
+            throw new Error('Service worker registration is unavailable.');
+        }
+
+        const swRegistration = await navigator.serviceWorker.ready;
+        setRegistration(swRegistration);
+
+        return swRegistration;
+    };
+
+    const handleDisablePush = async () => {
         setPushProcessing(true);
         setPushError('');
 
         try {
-            const subscription = await registration.pushManager.getSubscription();
+            const swRegistration = await resolveRegistration();
+            const subscription = await swRegistration.pushManager.getSubscription();
 
             if (subscription) {
                 await axios.delete(route('push.unsubscribe'), {
@@ -203,6 +218,8 @@ export default function Settings({ notificationSettings, pushStatus = {} }) {
             }
 
             setSubscribed(false);
+            setCurrentEndpoint(null);
+            await refreshSubscriptions();
         } catch (error) {
             setPushError(
                 error?.response?.data?.message ||
@@ -214,6 +231,89 @@ export default function Settings({ notificationSettings, pushStatus = {} }) {
         }
     };
 
+    const refreshSubscriptions = async () => {
+        const { data } = await axios.get(route('push.subscriptions.index'));
+        setSubscriptionList(data.subscriptions ?? []);
+    };
+
+    const handleRemoveSubscription = async (subscription) => {
+        if (subscription.endpoint === currentEndpoint) {
+            await handleDisablePush();
+            return;
+        }
+
+        setPushProcessing(true);
+        setPushError('');
+
+        try {
+            await axios.delete(route('push.subscriptions.destroy', subscription.id));
+            setSubscriptionList((current) =>
+                current.filter((item) => item.id !== subscription.id),
+            );
+        } catch (error) {
+            setPushError(
+                error?.response?.data?.message ||
+                    error?.message ||
+                    'Unable to remove this device.',
+            );
+        } finally {
+            setPushProcessing(false);
+        }
+    };
+
+    const formatDeviceName = (userAgent, deviceLabel) => {
+        if (deviceLabel) {
+            return deviceLabel;
+        }
+
+        if (!userAgent) {
+            return 'Unknown device';
+        }
+
+        const ua = userAgent.toLowerCase();
+        let browser = 'Browser';
+        let os = 'Unknown OS';
+
+        if (ua.includes('edg/')) {
+            browser = 'Edge';
+        } else if (ua.includes('opr/') || ua.includes('opera')) {
+            browser = 'Opera';
+        } else if (ua.includes('chrome/') || ua.includes('crios')) {
+            browser = 'Chrome';
+        } else if (ua.includes('firefox/') || ua.includes('fxios')) {
+            browser = 'Firefox';
+        } else if (ua.includes('safari/')) {
+            browser = 'Safari';
+        }
+
+        if (ua.includes('iphone') || ua.includes('ipad') || ua.includes('ipod')) {
+            os = 'iOS';
+        } else if (ua.includes('android')) {
+            os = 'Android';
+        } else if (ua.includes('windows nt')) {
+            os = 'Windows';
+        } else if (ua.includes('mac os x')) {
+            os = 'macOS';
+        } else if (ua.includes('linux')) {
+            os = 'Linux';
+        }
+
+        return `${browser} on ${os}`;
+    };
+
+    const formatDateTime = (value) => {
+        if (!value) {
+            return '—';
+        }
+
+        const parsed = new Date(value);
+        if (Number.isNaN(parsed.getTime())) {
+            return '—';
+        }
+
+        return parsed.toLocaleString();
+    };
+
     const isEnableMode = !subscribed;
     const pushButtonDisabled =
         pushProcessing ||
@@ -223,7 +323,7 @@ export default function Settings({ notificationSettings, pushStatus = {} }) {
         { label: 'Push supported', value: pushSupported ? 'Yes' : 'No' },
         { label: 'Permission', value: permissionState },
         { label: 'Subscribed', value: subscribed ? 'Yes' : 'No' },
-        { label: 'Saved subscriptions', value: String(subscriptionsCount) },
+        { label: 'Saved subscriptions', value: String(subscriptionList.length) },
     ];
 
     return (
@@ -420,13 +520,19 @@ export default function Settings({ notificationSettings, pushStatus = {} }) {
 
                 <div className="mt-6">
                     <h3 className="text-sm font-semibold text-slate-900">
-                        Push Diagnostics
+                        Devices
                     </h3>
                     <p className="mt-1 text-xs text-slate-500">
-                        What the server currently has stored for your account.
+                        Manage the devices that can receive your push reminders.
                     </p>
 
-                    {subscriptions.length === 0 ? (
+                    {!currentEndpoint && (
+                        <p className="mt-2 text-xs text-slate-500">
+                            Push disabled on this device.
+                        </p>
+                    )}
+
+                    {subscriptionList.length === 0 ? (
                         <p className="mt-3 text-xs text-slate-500">
                             No subscriptions saved yet.
                         </p>
@@ -434,42 +540,68 @@ export default function Settings({ notificationSettings, pushStatus = {} }) {
                         <div className="mt-3 overflow-hidden rounded-2xl border border-slate-200">
                             <div className="grid grid-cols-1 gap-px bg-slate-200 sm:grid-cols-4">
                                 <div className="bg-white px-4 py-2 text-[10px] font-semibold uppercase tracking-wide text-slate-500">
-                                    Endpoint
+                                    Device
+                                </div>
+                                <div className="bg-white px-4 py-2 text-[10px] font-semibold uppercase tracking-wide text-slate-500">
+                                    Created
                                 </div>
                                 <div className="bg-white px-4 py-2 text-[10px] font-semibold uppercase tracking-wide text-slate-500">
                                     Last seen
                                 </div>
                                 <div className="bg-white px-4 py-2 text-[10px] font-semibold uppercase tracking-wide text-slate-500">
-                                    Last push
-                                </div>
-                                <div className="bg-white px-4 py-2 text-[10px] font-semibold uppercase tracking-wide text-slate-500">
-                                    Last error
+                                    Actions
                                 </div>
                             </div>
-                            {subscriptions.map((sub) => (
+                            {subscriptionList.map((sub) => {
+                                const isCurrentDevice = currentEndpoint === sub.endpoint;
+
+                                return (
                                 <div
                                     key={sub.id}
                                     className="grid grid-cols-1 gap-px bg-slate-200 sm:grid-cols-4"
                                 >
                                     <div className="bg-white px-4 py-2 text-xs text-slate-700">
-                                        {sub.endpoint}
-                                        {sub.device_label ? (
-                                            <span className="ml-2 text-[10px] text-slate-400">
-                                                ({sub.device_label})
+                                        <div className="flex flex-wrap items-center gap-2">
+                                            <span className="font-semibold text-slate-900">
+                                                {formatDeviceName(
+                                                    sub.user_agent,
+                                                    sub.device_label,
+                                                )}
                                             </span>
+                                            {isCurrentDevice ? (
+                                                <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-emerald-700">
+                                                    This device
+                                                </span>
+                                            ) : null}
+                                        </div>
+                                        <p className="mt-1 text-[10px] text-slate-400">
+                                            {sub.endpoint_display ?? sub.endpoint}
+                                        </p>
+                                    </div>
+                                    <div className="bg-white px-4 py-2 text-xs text-slate-700">
+                                        {formatDateTime(sub.created_at)}
+                                    </div>
+                                    <div className="bg-white px-4 py-2 text-xs text-slate-700">
+                                        {formatDateTime(sub.last_seen_at)}
+                                    </div>
+                                    <div className="bg-white px-4 py-2 text-xs text-slate-700">
+                                        <button
+                                            type="button"
+                                            onClick={() => handleRemoveSubscription(sub)}
+                                            disabled={pushProcessing || isCurrentDevice}
+                                            className="rounded-full border border-rose-200 bg-white px-4 py-1 text-[10px] font-semibold uppercase tracking-widest text-rose-600 disabled:cursor-not-allowed disabled:opacity-60"
+                                        >
+                                            Remove
+                                        </button>
+                                        {isCurrentDevice ? (
+                                            <p className="mt-2 text-[10px] text-slate-400">
+                                                Use “Disable Push” to remove this device.
+                                            </p>
                                         ) : null}
                                     </div>
-                                    <div className="bg-white px-4 py-2 text-xs text-slate-700">
-                                        {sub.last_seen_at ?? '—'}
-                                    </div>
-                                    <div className="bg-white px-4 py-2 text-xs text-slate-700">
-                                        {sub.last_push_at ?? '—'}
-                                    </div>
-                                    <div className="bg-white px-4 py-2 text-xs text-slate-700">
-                                        {sub.last_push_error ?? '—'}
-                                    </div>
                                 </div>
-                            ))}
+                                );
+                            })}
                         </div>
                     )}
                 </div>

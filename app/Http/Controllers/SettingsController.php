@@ -21,8 +21,11 @@ class SettingsController extends Controller
             ->get()
             ->map(fn ($subscription) => [
                 'id' => $subscription->id,
-                'endpoint' => $this->truncateEndpoint($subscription->endpoint),
+                'endpoint' => $subscription->endpoint,
+                'endpoint_display' => $this->truncateEndpoint($subscription->endpoint),
                 'device_label' => $subscription->device_label,
+                'user_agent' => $subscription->user_agent,
+                'created_at' => $subscription->created_at,
                 'last_seen_at' => $subscription->last_seen_at,
                 'last_push_at' => $subscription->last_push_at,
                 'last_push_error' => $subscription->last_push_error,

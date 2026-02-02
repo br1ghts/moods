@@ -30,6 +30,8 @@ Route::middleware('auth')->group(function () {
     Route::put('/settings/notifications', [SettingsController::class, 'update'])->name('settings.notifications.update');
     Route::post('/push/subscribe', [PushController::class, 'subscribe'])->name('push.subscribe');
     Route::delete('/push/unsubscribe', [PushController::class, 'unsubscribe'])->name('push.unsubscribe');
+    Route::get('/push/subscriptions', [PushController::class, 'index'])->name('push.subscriptions.index');
+    Route::delete('/push/subscriptions/{pushSubscription}', [PushController::class, 'destroy'])->name('push.subscriptions.destroy');
     Route::get('/push/vapid-public-key', [PushController::class, 'vapidPublicKey'])->name('push.vapid-public-key');
     Route::post('/push/test', [PushController::class, 'test'])->name('push.test');
 });
