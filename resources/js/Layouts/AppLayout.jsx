@@ -58,9 +58,9 @@ export default function AppLayout({ children }) {
                             href={route('log')}
                             className="flex items-center gap-2 text-lg font-semibold text-slate-900"
                         >
-                            <span className="text-2xl">🌤</span>
+                            <img src="/images/moods_logo_xs.png" alt="Logo" className="h-[1.4em] w-[1.4em] align-middle ml-1"/>
                             <span className="md:hidden">Moods</span>
-                            <span className="hidden md:inline">Mood Tracker</span>
+                            <span className="hidden md:inline">Moods</span>
                             <span className="hidden text-xs text-slate-500 md:inline">
                                 By Brendon Baugh
                             </span>

@@ -24,9 +24,14 @@ class InsightsController extends Controller
         $now = CarbonImmutable::now($timezone);
         $user = request()->user();
         $baseQuery = MoodEntry::with('mood')->where('user_id', $user->id);
+        $last7Start = $now->copy()->startOfDay()->subDays(6);
 
         $hourlyEntries = (clone $baseQuery)
             ->where('occurred_at', '>=', $now->copy()->subDay()->setTimezone('UTC'))
+            ->get();
+
+        $dailyEntries = (clone $baseQuery)
+            ->where('occurred_at', '>=', $now->copy()->startOfDay()->subDays(29)->setTimezone('UTC'))
             ->get();
 
         $weeklyEntries = (clone $baseQuery)
@@ -41,8 +46,13 @@ class InsightsController extends Controller
             ->where('occurred_at', '>=', $now->copy()->startOfYear()->subYears(4)->setTimezone('UTC'))
             ->get();
 
+        $last7Entries = (clone $baseQuery)
+            ->where('occurred_at', '>=', $last7Start->setTimezone('UTC'))
+            ->get();
+
         return response()->json([
             'hourly' => $this->buildHourly($hourlyEntries, $timezone, $now),
+            'daily' => $this->buildDaily($dailyEntries, $timezone, $now),
             'weekly' => $this->buildWeekly($weeklyEntries, $timezone, $now),
             'monthly' => $this->buildMonthly($monthlyEntries, $timezone, $now),
             'yearly' => $this->buildYearly($yearlyEntries, $timezone, $now),
@@ -50,6 +60,12 @@ class InsightsController extends Controller
                 'today' => $this->dominantMood((clone $baseQuery)->where('occurred_at', '>=', $now->copy()->startOfDay()->setTimezone('UTC'))->get()),
                 'thisWeek' => $this->dominantMood((clone $baseQuery)->where('occurred_at', '>=', $now->copy()->startOfWeek()->setTimezone('UTC'))->get()),
                 'thisMonth' => $this->dominantMood((clone $baseQuery)->where('occurred_at', '>=', $now->copy()->startOfMonth()->setTimezone('UTC'))->get()),
+            ],
+            'summary' => [
+                'dominantToday' => $this->dominantMood((clone $baseQuery)->where('occurred_at', '>=', $now->copy()->startOfDay()->setTimezone('UTC'))->get()),
+                'dominantLast7Days' => $this->dominantMood($last7Entries),
+                'last7TotalEntries' => $last7Entries->count(),
+                'last7AvgIntensity' => $this->averageIntensity($last7Entries),
             ],
         ]);
     }
@@ -72,6 +88,37 @@ class InsightsController extends Controller
                 'label' => $hour->format('g a'),
                 'counts' => $this->formatCounts($buckets[$hour->toIso8601String()] ?? []),
             ])
+            ->toArray();
+    }
+
+    private function buildDaily(Collection $entries, string $timezone, CarbonImmutable $now): array
+    {
+        $buckets = $this->accumulateWithIntensity(
+            $entries,
+            fn (MoodEntry $entry) => $entry->occurred_at->timezone($timezone)->startOfDay()->toDateString(),
+        );
+
+        $days = collect(range(0, 29))
+            ->map(fn (int $offset) => $now->copy()->startOfDay()->subDays($offset))
+            ->reverse()
+            ->values();
+
+        return $days
+            ->map(function (CarbonImmutable $day) use ($buckets) {
+                $key = $day->toDateString();
+                $bucket = $buckets[$key] ?? ['counts' => [], 'intensitySum' => 0, 'intensityCount' => 0];
+                $counts = $this->formatCounts($bucket['counts'] ?? []);
+
+                return [
+                    'date' => $key,
+                    'counts' => $counts,
+                    'total' => array_sum($counts),
+                    'intensityAvg' => $this->formatIntensityAverage(
+                        $bucket['intensitySum'] ?? 0,
+                        $bucket['intensityCount'] ?? 0,
+                    ),
+                ];
+            })
             ->toArray();
     }
 
@@ -154,11 +201,57 @@ class InsightsController extends Controller
         return $results;
     }
 
+    private function accumulateWithIntensity(Collection $entries, callable $bucket): array
+    {
+        $results = [];
+
+        foreach ($entries as $entry) {
+            $moodKey = $entry->mood?->key;
+
+            if (! $moodKey) {
+                continue;
+            }
+
+            $key = $bucket($entry);
+
+            $results[$key]['counts'][$moodKey] = ($results[$key]['counts'][$moodKey] ?? 0) + 1;
+
+            if (! is_null($entry->intensity)) {
+                $results[$key]['intensitySum'] = ($results[$key]['intensitySum'] ?? 0) + $entry->intensity;
+                $results[$key]['intensityCount'] = ($results[$key]['intensityCount'] ?? 0) + 1;
+            }
+        }
+
+        return $results;
+    }
+
     private function formatCounts(array $counts): array
     {
         return collect($counts)
             ->mapWithKeys(fn ($value, $moodKey) => [$moodKey => (int) $value])
             ->toArray();
+    }
+
+    private function formatIntensityAverage(int $sum, int $count): ?float
+    {
+        if ($count === 0) {
+            return null;
+        }
+
+        return round($sum / $count, 1);
+    }
+
+    private function averageIntensity(Collection $entries): ?float
+    {
+        $intensityEntries = $entries->filter(fn (MoodEntry $entry) => ! is_null($entry->intensity));
+
+        if ($intensityEntries->isEmpty()) {
+            return null;
+        }
+
+        $average = $intensityEntries->avg('intensity');
+
+        return $average ? round($average, 1) : null;
     }
 
     private function dominantMood(Collection $entries): ?string
