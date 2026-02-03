@@ -111,6 +111,9 @@ export default function Settings({
                     if (subscription) {
                         setSubscribed(true);
                         setCurrentEndpoint(subscription.endpoint);
+                        syncSubscription(subscription).catch(() => {
+                            // ignore sync errors
+                        });
                     }
                 })
                 .catch(() => {
@@ -179,6 +182,15 @@ export default function Settings({
         }
     };
 
+    const syncSubscription = async (subscription) => {
+        const payload = subscription.toJSON();
+        payload.content_encoding = subscription.options?.contentEncoding ?? 'aes128gcm';
+        payload.user_agent = navigator.userAgent;
+
+        await axios.post(route('push.subscribe'), payload);
+        await refreshSubscriptions();
+    };
+
     const handleEnablePush = async () => {
         if (!registration || typeof Notification === 'undefined') {
             return;
@@ -200,15 +212,10 @@ export default function Settings({
 
             if (existingSubscriptions.length === 1) {
                 const subscription = existingSubscriptions[0].sub;
-                const payload = subscription.toJSON();
-                payload.content_encoding = subscription.options?.contentEncoding ?? 'aes128gcm';
-                payload.user_agent = navigator.userAgent;
-
-                await axios.post(route('push.subscribe'), payload);
+                await syncSubscription(subscription);
 
                 setSubscribed(true);
                 setCurrentEndpoint(subscription.endpoint);
-                await refreshSubscriptions();
                 return;
             }
 
@@ -250,15 +257,10 @@ export default function Settings({
                 applicationServerKey: urlBase64ToUint8Array(key),
             });
 
-            const payload = subscription.toJSON();
-            payload.content_encoding = subscription.options?.contentEncoding ?? 'aes128gcm';
-            payload.user_agent = navigator.userAgent;
-
-            await axios.post(route('push.subscribe'), payload);
+            await syncSubscription(subscription);
 
             setSubscribed(true);
             setCurrentEndpoint(subscription.endpoint);
-            await refreshSubscriptions();
         } catch (error) {
             setPushError(
                 error?.response?.data?.message ||
@@ -278,6 +280,7 @@ export default function Settings({
         try {
             const { data } = await axios.post(route('push.test'));
             setTestResult(data);
+            await syncCurrentSubscription();
         } catch (error) {
             setPushError(
                 error?.response?.data?.message ||
@@ -302,6 +305,18 @@ export default function Settings({
         setRegistration(swRegistration);
 
         return swRegistration;
+    };
+
+    const syncCurrentSubscription = async () => {
+        try {
+            const swRegistration = await resolveRegistration();
+            const subscription = await swRegistration.pushManager.getSubscription();
+            if (subscription) {
+                await syncSubscription(subscription);
+            }
+        } catch (error) {
+            // ignore sync failures
+        }
     };
 
     const handleDisablePush = async () => {
