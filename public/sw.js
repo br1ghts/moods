@@ -36,7 +36,9 @@ self.addEventListener('push', (event) => {
     event.waitUntil(
         self.registration.getNotifications({ tag }).then((existing) => {
             if (existing && existing.length > 0) {
-                return;
+                for (const notification of existing) {
+                    notification.close();
+                }
             }
 
             return self.registration.showNotification(payload.title, options);
