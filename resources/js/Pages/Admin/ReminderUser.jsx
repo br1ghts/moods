@@ -1,5 +1,7 @@
+import { AdminLink } from '@/Components/Admin/AdminButton';
+import AdminCard from '@/Components/Admin/AdminCard';
+import StatCard from '@/Components/Admin/StatCard';
 import AdminLayout from '@/Layouts/AdminLayout';
-import { Link } from '@inertiajs/react';
 
 const weekdayLabel = (value) => {
     const map = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
@@ -17,8 +19,8 @@ export default function ReminderUser({ user, setting, sends }) {
     return (
         <AdminLayout>
             <div className="flex flex-col gap-6">
-                <section className="rounded-3xl border border-slate-200 bg-white/90 p-6 shadow-md shadow-slate-900/5">
-                    <div className="flex flex-wrap items-center justify-between gap-4">
+                <AdminCard>
+                    <div className="flex flex-wrap items-start justify-between gap-4">
                         <div>
                             <p className="text-xs uppercase tracking-[0.3em] text-slate-400">Reminder detail</p>
                             <h2 className="text-2xl font-semibold text-slate-900">
@@ -26,31 +28,23 @@ export default function ReminderUser({ user, setting, sends }) {
                             </h2>
                             <p className="text-sm text-slate-500">{user?.email}</p>
                         </div>
-                        <Link
+                        <AdminLink
                             href={route('admin.reminders')}
-                            className="rounded-full border border-slate-200 px-4 py-2 text-xs font-semibold uppercase tracking-[0.3em] text-slate-600 transition hover:border-slate-300"
+                            variant="secondary"
+                            size="md"
                         >
                             Back to reminders
-                        </Link>
+                        </AdminLink>
                     </div>
 
-                    <div className="mt-6 grid gap-4 sm:grid-cols-3">
-                        <div className="rounded-2xl border border-slate-100 bg-slate-50 px-4 py-3">
-                            <p className="text-xs uppercase tracking-[0.3em] text-slate-400">Devices</p>
-                            <p className="mt-2 text-2xl font-semibold text-slate-900">{user?.push_devices_count ?? 0}</p>
-                        </div>
-                        <div className="rounded-2xl border border-slate-100 bg-slate-50 px-4 py-3">
-                            <p className="text-xs uppercase tracking-[0.3em] text-slate-400">Next due (UTC)</p>
-                            <p className="mt-2 text-sm font-semibold text-slate-700">{formatDateTime(setting?.next_due_at)}</p>
-                        </div>
-                        <div className="rounded-2xl border border-slate-100 bg-slate-50 px-4 py-3">
-                            <p className="text-xs uppercase tracking-[0.3em] text-slate-400">Last sent (UTC)</p>
-                            <p className="mt-2 text-sm font-semibold text-slate-700">{formatDateTime(setting?.last_sent_at)}</p>
-                        </div>
+                    <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                        <StatCard label="Devices" value={user?.push_devices_count ?? 0} />
+                        <StatCard label="Next due (UTC)" value={formatDateTime(setting?.next_due_at)} />
+                        <StatCard label="Last sent (UTC)" value={formatDateTime(setting?.last_sent_at)} />
                     </div>
-                </section>
+                </AdminCard>
 
-                <section className="rounded-3xl border border-slate-200 bg-white/90 p-6 shadow-md shadow-slate-900/5">
+                <AdminCard>
                     <h3 className="text-lg font-semibold text-slate-900">Notification settings</h3>
                     {setting ? (
                         <div className="mt-4 grid gap-4 text-sm text-slate-600 sm:grid-cols-4">
@@ -84,15 +78,15 @@ export default function ReminderUser({ user, setting, sends }) {
                     ) : (
                         <p className="mt-4 text-sm text-slate-500">No notification settings found.</p>
                     )}
-                </section>
+                </AdminCard>
 
-                <section className="rounded-3xl border border-slate-200 bg-white/90 p-6 shadow-md shadow-slate-900/5">
+                <AdminCard>
                     <div className="flex items-center justify-between">
                         <h3 className="text-lg font-semibold text-slate-900">Reminder sends (latest 200)</h3>
                         <p className="text-sm text-slate-500">Newest first.</p>
                     </div>
 
-                    <div className="mt-4 overflow-x-auto">
+                    <div className="mt-4 hidden overflow-hidden rounded-2xl border border-slate-100 sm:block">
                         <table className="w-full text-left text-sm">
                             <thead className="bg-slate-50 text-xs uppercase tracking-[0.3em] text-slate-500">
                                 <tr>
@@ -108,7 +102,7 @@ export default function ReminderUser({ user, setting, sends }) {
                             <tbody>
                                 {sends.length === 0 && (
                                     <tr>
-                                        <td className="px-4 py-4 text-sm text-slate-500" colSpan={6}>
+                                        <td className="px-4 py-4 text-sm text-slate-500" colSpan={7}>
                                             No reminder sends yet.
                                         </td>
                                     </tr>
@@ -129,7 +123,32 @@ export default function ReminderUser({ user, setting, sends }) {
                             </tbody>
                         </table>
                     </div>
-                </section>
+
+                    <div className="mt-4 space-y-3 sm:hidden">
+                        {sends.length === 0 && (
+                            <div className="rounded-2xl border border-slate-100 bg-white px-4 py-4 text-sm text-slate-500 shadow-sm">
+                                No reminder sends yet.
+                            </div>
+                        )}
+                        {sends.map((send) => (
+                            <div key={send.id} className="rounded-2xl border border-slate-100 bg-white px-4 py-4 shadow-sm">
+                                <div className="flex items-start justify-between gap-3">
+                                    <div>
+                                        <p className="text-sm font-semibold text-slate-900">{send.bucket_key}</p>
+                                        <p className="text-xs text-slate-500">Status: {send.status}</p>
+                                    </div>
+                                </div>
+                                <div className="mt-3 grid gap-2 text-xs text-slate-600 sm:grid-cols-2">
+                                    <div>Due: {formatDateTime(send.due_at_utc)}</div>
+                                    <div>Attempted: {formatDateTime(send.attempted_at_utc)}</div>
+                                    <div>Completed: {formatDateTime(send.completed_at_utc)}</div>
+                                    <div>Devices: {send.devices_succeeded}/{send.devices_targeted}</div>
+                                    <div>Failure: {send.failure_reason || '—'}</div>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </AdminCard>
             </div>
         </AdminLayout>
     );

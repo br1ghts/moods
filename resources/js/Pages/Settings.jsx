@@ -709,14 +709,6 @@ export default function Settings({
                     <div className="flex flex-wrap items-center justify-end gap-2">
                         <button
                             type="button"
-                            onClick={handleTestPush}
-                            disabled={pushProcessing || !subscribed}
-                            className="rounded-full border border-slate-200 bg-white px-5 py-2 text-xs font-semibold uppercase tracking-widest text-slate-900 disabled:cursor-not-allowed disabled:opacity-60"
-                        >
-                            Send Test Push
-                        </button>
-                        <button
-                            type="button"
                             onClick={
                                 isEnableMode ? handleEnablePush : handleDisablePush
                             }

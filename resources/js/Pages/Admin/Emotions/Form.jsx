@@ -1,3 +1,5 @@
+import { AdminButton, AdminLink } from '@/Components/Admin/AdminButton';
+import AdminCard from '@/Components/Admin/AdminCard';
 import AdminLayout from '@/Layouts/AdminLayout';
 import {
     allowedColors,
@@ -5,7 +7,7 @@ import {
     getMoodColorClass,
     normalizeMoodColorKey,
 } from '@/utils/moodColors';
-import { Link, useForm } from '@inertiajs/react';
+import { useForm } from '@inertiajs/react';
 
 export default function EmotionForm({ emotion }) {
     const isEditing = Boolean(emotion);
@@ -52,72 +54,80 @@ export default function EmotionForm({ emotion }) {
 
     return (
         <AdminLayout>
-            <div className="rounded-3xl border border-slate-200 bg-white/90 p-6 shadow-md shadow-slate-900/5">
+            <AdminCard>
                 <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
                     <div>
-                        <h2 className="text-xl font-semibold text-slate-900">
-                            {isEditing ? 'Edit Emotion' : 'Add Emotion'}
+                        <p className="text-xs uppercase tracking-[0.3em] text-slate-400">Moods</p>
+                        <h2 className="text-2xl font-semibold text-slate-900">
+                            {isEditing ? 'Edit emotion' : 'Add emotion'}
                         </h2>
                         <p className="text-sm text-slate-500">
                             {isEditing
-                                ? 'Update the emotion metadata so it appears in the right order.'
-                                : 'New emotions will be appended at the end unless you set a sort order.'}
+                                ? 'Update the mood metadata so it appears in the right order.'
+                                : 'New moods are appended unless you set a sort order.'}
                         </p>
                     </div>
-                    <Link
+                    <AdminLink
                         href={route('admin.emotions.index')}
-                        className="text-sm font-semibold uppercase tracking-[0.3em] text-slate-500"
+                        variant="secondary"
+                        size="md"
                     >
                         Back to list
-                    </Link>
+                    </AdminLink>
                 </div>
 
-                <form className="space-y-4" onSubmit={submit}>
-                    <div>
-                        <label className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500">Label</label>
-                        <input
-                            type="text"
-                            value={form.data.label}
-                            onChange={(event) => form.setData('label', event.target.value)}
-                            className="mt-2 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-800 outline-none focus:border-slate-400"
-                        />
-                        {form.errors.label && (
-                            <p className="mt-1 text-xs text-rose-600">{form.errors.label}</p>
-                        )}
-                    </div>
+                <form className="space-y-6" onSubmit={submit}>
+                    <div className="grid gap-4 md:grid-cols-2">
+                        <div>
+                            <label className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500">Label</label>
+                            <p className="mt-1 text-xs text-slate-400">Human-friendly name shown in the UI.</p>
+                            <input
+                                type="text"
+                                value={form.data.label}
+                                onChange={(event) => form.setData('label', event.target.value)}
+                                className="mt-3 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-800 outline-none focus:border-slate-400"
+                            />
+                            {form.errors.label && (
+                                <p className="mt-2 text-xs text-rose-600">{form.errors.label}</p>
+                            )}
+                        </div>
 
-                    <div>
-                        <label className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500">Key</label>
-                        <input
-                            type="text"
-                            value={form.data.key}
-                            onChange={(event) => form.setData('key', event.target.value)}
-                            className="mt-2 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-800 outline-none focus:border-slate-400"
-                            placeholder="e.g. calm"
-                        />
-                        {form.errors.key && (
-                            <p className="mt-1 text-xs text-rose-600">{form.errors.key}</p>
-                        )}
+                        <div>
+                            <label className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500">Key</label>
+                            <p className="mt-1 text-xs text-slate-400">Short identifier used in the database.</p>
+                            <input
+                                type="text"
+                                value={form.data.key}
+                                onChange={(event) => form.setData('key', event.target.value)}
+                                className="mt-3 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-800 outline-none focus:border-slate-400"
+                                placeholder="e.g. calm"
+                            />
+                            {form.errors.key && (
+                                <p className="mt-2 text-xs text-rose-600">{form.errors.key}</p>
+                            )}
+                        </div>
                     </div>
 
                     <div className="grid gap-4 md:grid-cols-3">
-                        <label className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500">
-                            Emoji
+                        <div>
+                            <label className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500">Emoji</label>
+                            <p className="mt-1 text-xs text-slate-400">Helps make the list scannable.</p>
                             <input
                                 type="text"
                                 value={form.data.emoji}
                                 onChange={(event) => form.setData('emoji', event.target.value)}
-                                className="mt-2 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-800 outline-none focus:border-slate-400"
+                                className="mt-3 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-800 outline-none focus:border-slate-400"
                                 placeholder="🙂"
                             />
                             {form.errors.emoji && (
-                                <p className="mt-1 text-xs text-rose-600">{form.errors.emoji}</p>
+                                <p className="mt-2 text-xs text-rose-600">{form.errors.emoji}</p>
                             )}
-                        </label>
+                        </div>
 
-                        <label className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500">
-                            Color key
-                            <div className="mt-2 flex items-center gap-3">
+                        <div>
+                            <label className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500">Color key</label>
+                            <p className="mt-1 text-xs text-slate-400">Shown on charts and lists.</p>
+                            <div className="mt-3 flex items-center gap-3">
                                 <span
                                     aria-hidden
                                     className={`h-6 w-6 rounded-full ${getMoodColorClass(
@@ -140,53 +150,58 @@ export default function EmotionForm({ emotion }) {
                                 </select>
                             </div>
                             {form.errors.color && (
-                                <p className="mt-1 text-xs text-rose-600">{form.errors.color}</p>
+                                <p className="mt-2 text-xs text-rose-600">{form.errors.color}</p>
                             )}
                             {hasInvalidStoredColor && (
-                                <p className="mt-1 text-xs text-amber-600">Invalid color stored.</p>
+                                <p className="mt-2 text-xs text-amber-600">Invalid color stored.</p>
                             )}
-                        </label>
+                        </div>
 
-                        <label className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500">
-                            Sort order
+                        <div>
+                            <label className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500">Sort order</label>
+                            <p className="mt-1 text-xs text-slate-400">Lower numbers appear first.</p>
                             <input
                                 type="number"
                                 min={0}
                                 value={form.data.sort_order ?? ''}
                                 onChange={(event) => form.setData('sort_order', event.target.value)}
-                                className="mt-2 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-800 outline-none focus:border-slate-400"
+                                className="mt-3 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-800 outline-none focus:border-slate-400"
                                 placeholder="Auto"
                             />
                             {form.errors.sort_order && (
-                                <p className="mt-1 text-xs text-rose-600">{form.errors.sort_order}</p>
+                                <p className="mt-2 text-xs text-rose-600">{form.errors.sort_order}</p>
                             )}
-                        </label>
+                        </div>
                     </div>
 
-                    <div className="flex items-center gap-3">
-                        <input
-                            type="checkbox"
-                            id="is_active"
-                            checked={form.data.is_active}
-                            onChange={(event) => form.setData('is_active', event.target.checked)}
-                            className="rounded border border-slate-200 text-slate-900 focus:ring-2 focus:ring-slate-900"
-                        />
-                        <label htmlFor="is_active" className="text-sm font-semibold text-slate-700">
-                            Active
+                    <div className="rounded-2xl border border-slate-100 bg-slate-50/80 px-4 py-3">
+                        <label htmlFor="is_active" className="flex items-center gap-3">
+                            <input
+                                type="checkbox"
+                                id="is_active"
+                                checked={form.data.is_active}
+                                onChange={(event) => form.setData('is_active', event.target.checked)}
+                                className="h-4 w-4 rounded border border-slate-200 text-slate-900 focus:ring-2 focus:ring-slate-900"
+                            />
+                            <div>
+                                <p className="text-sm font-semibold text-slate-700">Active</p>
+                                <p className="text-xs text-slate-400">Inactive moods stay in history but hide from new logs.</p>
+                            </div>
                         </label>
                     </div>
 
                     <div className="flex justify-end">
-                        <button
+                        <AdminButton
                             type="submit"
+                            variant="primary"
+                            size="lg"
                             disabled={form.processing}
-                            className="inline-flex items-center justify-center rounded-full bg-slate-900 px-5 py-2 text-xs font-semibold uppercase tracking-[0.3em] text-white disabled:cursor-not-allowed disabled:opacity-60"
                         >
                             {isEditing ? 'Update' : 'Create'}
-                        </button>
+                        </AdminButton>
                     </div>
                 </form>
-            </div>
+            </AdminCard>
         </AdminLayout>
     );
 }

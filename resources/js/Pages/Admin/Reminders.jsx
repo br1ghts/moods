@@ -1,3 +1,6 @@
+import { AdminButton, AdminLink } from '@/Components/Admin/AdminButton';
+import AdminCard from '@/Components/Admin/AdminCard';
+import StatCard from '@/Components/Admin/StatCard';
 import AdminLayout from '@/Layouts/AdminLayout';
 import { Link, router } from '@inertiajs/react';
 
@@ -37,42 +40,19 @@ export default function Reminders({ lastTickAt, dueCount, dueSettings, recentSen
     return (
         <AdminLayout>
             <div className="flex flex-col gap-6">
-                <section className="rounded-3xl border border-slate-200 bg-white/90 p-6 shadow-md shadow-slate-900/5">
-                    <div className="flex flex-wrap items-center justify-between gap-4">
+                <AdminCard>
+                    <div className="flex flex-wrap items-start justify-between gap-4">
                         <div>
                             <p className="text-xs uppercase tracking-[0.3em] text-slate-400">Reminders</p>
-                            <h2 className="text-2xl font-semibold text-slate-900">Scheduled reminder status</h2>
                             <p className="text-sm text-slate-500">Track due users, recent sends, and failures.</p>
-                        </div>
-                        <div className="flex flex-wrap gap-2">
-                            <button
-                                type="button"
-                                onClick={runTick}
-                                className="rounded-full bg-slate-900 px-4 py-2 text-xs font-semibold uppercase tracking-[0.3em] text-white transition hover:bg-slate-800"
-                            >
-                                Run tick now
-                            </button>
-                            <button
-                                type="button"
-                                onClick={simulateDue}
-                                className="rounded-full border border-slate-200 px-4 py-2 text-xs font-semibold uppercase tracking-[0.3em] text-slate-600 transition hover:border-slate-300"
-                            >
-                                Simulate due now (me)
-                            </button>
                         </div>
                     </div>
 
-                    <div className="mt-6 grid gap-4 sm:grid-cols-4">
-                        <div className="rounded-2xl border border-slate-100 bg-slate-50 px-4 py-3">
-                            <p className="text-xs uppercase tracking-[0.3em] text-slate-400">Last tick</p>
-                            <p className="mt-2 text-sm font-semibold text-slate-700">{formatDateTime(lastTickAt)}</p>
-                        </div>
-                        <div className="rounded-2xl border border-slate-100 bg-slate-50 px-4 py-3">
-                            <p className="text-xs uppercase tracking-[0.3em] text-slate-400">Due now</p>
-                            <p className="mt-2 text-2xl font-semibold text-slate-900">{dueCount}</p>
-                        </div>
-                        <div className="rounded-2xl border border-slate-100 bg-slate-50 px-4 py-3">
-                            <p className="text-xs uppercase tracking-[0.3em] text-slate-400">Recent failures</p>
+                    <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                        <StatCard label="Last tick" value={formatDateTime(lastTickAt)} />
+                        <StatCard label="Due now" value={dueCount} />
+                        <div className="rounded-2xl border border-slate-100 bg-slate-50/80 px-4 py-3">
+                            <p className="text-[10px] uppercase tracking-[0.35em] text-slate-400 ">Recent failures</p>
                             <div className="mt-2 flex flex-col gap-1 text-sm text-slate-600">
                                 {failureGroups.length === 0 && <span>None</span>}
                                 {failureGroups.map((group) => (
@@ -82,8 +62,8 @@ export default function Reminders({ lastTickAt, dueCount, dueSettings, recentSen
                                 ))}
                             </div>
                         </div>
-                        <div className="rounded-2xl border border-slate-100 bg-slate-50 px-4 py-3">
-                            <p className="text-xs uppercase tracking-[0.3em] text-slate-400">Queue</p>
+                        <div className="rounded-2xl border border-slate-100 bg-slate-50/80 px-4 py-3">
+                            <p className="text-[10px] uppercase tracking-[0.35em] text-slate-400">Queue</p>
                             <div className="mt-2 space-y-1 text-sm text-slate-600">
                                 <div>Pending: {queueStats?.pending ?? 0}</div>
                                 <div>Reserved: {queueStats?.reserved ?? 0}</div>
@@ -92,9 +72,9 @@ export default function Reminders({ lastTickAt, dueCount, dueSettings, recentSen
                             </div>
                         </div>
                     </div>
-                </section>
+                </AdminCard>
 
-                <section className="rounded-3xl border border-slate-200 bg-white/90 p-6 shadow-md shadow-slate-900/5">
+                <AdminCard>
                     <div className="flex items-center justify-between">
                         <h3 className="text-lg font-semibold text-slate-900">Due users</h3>
                         <p className="text-sm text-slate-500">Showing up to 20 users due in the next 30 seconds.</p>
@@ -117,12 +97,13 @@ export default function Reminders({ lastTickAt, dueCount, dueSettings, recentSen
                                         Devices: {setting.user?.push_devices_count ?? 0}
                                     </div>
                                     {setting.user?.id && (
-                                        <Link
+                                        <AdminLink
                                             href={route('admin.reminders.user', setting.user.id)}
-                                            className="rounded-full border border-slate-200 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.3em] text-slate-600 transition hover:border-slate-300"
+                                            size="sm"
+                                            variant="secondary"
                                         >
                                             View user
-                                        </Link>
+                                        </AdminLink>
                                     )}
                                 </div>
 
@@ -181,15 +162,15 @@ export default function Reminders({ lastTickAt, dueCount, dueSettings, recentSen
                             </div>
                         ))}
                     </div>
-                </section>
+                </AdminCard>
 
-                <section className="rounded-3xl border border-slate-200 bg-white/90 p-6 shadow-md shadow-slate-900/5">
+                <AdminCard>
                     <div className="flex items-center justify-between">
                         <h3 className="text-lg font-semibold text-slate-900">Recent reminder sends</h3>
                         <p className="text-sm text-slate-500">Last 100 send attempts.</p>
                     </div>
 
-                    <div className="mt-4 overflow-x-auto">
+                    <div className="mt-4 hidden overflow-hidden rounded-2xl border border-slate-100 sm:block">
                         <table className="w-full text-left text-sm">
                             <thead className="bg-slate-50 text-xs uppercase tracking-[0.3em] text-slate-500">
                                 <tr>
@@ -238,7 +219,39 @@ export default function Reminders({ lastTickAt, dueCount, dueSettings, recentSen
                             </tbody>
                         </table>
                     </div>
-                </section>
+
+                    <div className="mt-4 space-y-3 sm:hidden">
+                        {recentSends.map((send) => (
+                            <div key={send.id} className="rounded-2xl border border-slate-100 bg-white px-4 py-4 shadow-sm">
+                                <div className="flex items-start justify-between gap-3">
+                                    <div>
+                                        <p className="text-sm font-semibold text-slate-900">
+                                            {send.user?.name || 'Unnamed'}
+                                        </p>
+                                        <p className="text-xs text-slate-500">{send.user?.email}</p>
+                                    </div>
+                                    {send.user?.id && (
+                                        <AdminLink
+                                            href={route('admin.reminders.user', send.user.id)}
+                                            size="sm"
+                                            variant="secondary"
+                                        >
+                                            View
+                                        </AdminLink>
+                                    )}
+                                </div>
+                                <div className="mt-3 grid gap-2 text-xs text-slate-600 sm:grid-cols-2">
+                                    <div>Bucket: {send.bucket_key}</div>
+                                    <div>Status: {send.status}</div>
+                                    <div>Due: {formatDateTime(send.due_at_utc)}</div>
+                                    <div>Attempted: {formatDateTime(send.attempted_at_utc)}</div>
+                                    <div>Devices: {send.devices_succeeded}/{send.devices_targeted}</div>
+                                    <div>Failure: {send.failure_reason || '—'}</div>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </AdminCard>
             </div>
         </AdminLayout>
     );
