@@ -141,6 +141,48 @@ export default function Settings({ notificationSettings, pushStatus = {}, isAdmi
         setPushError('');
 
         try {
+            const existingRegistrations = await navigator.serviceWorker.getRegistrations();
+            const existingSubscriptions = [];
+
+            for (const reg of existingRegistrations) {
+                const sub = await reg.pushManager.getSubscription();
+                if (sub) {
+                    existingSubscriptions.push({ reg, sub });
+                }
+            }
+
+            if (existingSubscriptions.length === 1) {
+                const subscription = existingSubscriptions[0].sub;
+                const payload = subscription.toJSON();
+                payload.content_encoding = subscription.options?.contentEncoding ?? 'aes128gcm';
+                payload.user_agent = navigator.userAgent;
+
+                await axios.post(route('push.subscribe'), payload);
+
+                setSubscribed(true);
+                setCurrentEndpoint(subscription.endpoint);
+                await refreshSubscriptions();
+                return;
+            }
+
+            if (existingSubscriptions.length > 1) {
+                for (const entry of existingSubscriptions) {
+                    try {
+                        await axios.delete(route('push.unsubscribe'), {
+                            data: { endpoint: entry.sub.endpoint },
+                        });
+                    } catch (error) {
+                        // ignore cleanup errors
+                    }
+
+                    try {
+                        await entry.sub.unsubscribe();
+                    } catch (error) {
+                        // ignore cleanup errors
+                    }
+                }
+            }
+
             const permission = await Notification.requestPermission();
             setPermissionState(permission);
 
@@ -220,15 +262,26 @@ export default function Settings({ notificationSettings, pushStatus = {}, isAdmi
         setPushError('');
 
         try {
-            const swRegistration = await resolveRegistration();
-            const subscription = await swRegistration.pushManager.getSubscription();
+            const registrations = await navigator.serviceWorker.getRegistrations();
 
-            if (subscription) {
-                await axios.delete(route('push.unsubscribe'), {
-                    data: { endpoint: subscription.endpoint },
-                });
+            for (const reg of registrations) {
+                const subscription = await reg.pushManager.getSubscription();
 
-                await subscription.unsubscribe();
+                if (subscription) {
+                    try {
+                        await axios.delete(route('push.unsubscribe'), {
+                            data: { endpoint: subscription.endpoint },
+                        });
+                    } catch (error) {
+                        // ignore cleanup errors
+                    }
+
+                    try {
+                        await subscription.unsubscribe();
+                    } catch (error) {
+                        // ignore cleanup errors
+                    }
+                }
             }
 
             setSubscribed(false);

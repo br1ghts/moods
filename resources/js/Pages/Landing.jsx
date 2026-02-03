@@ -18,7 +18,7 @@ export default function Landing({ googleRedirect }) {
                 <div className="absolute -top-24 right-0 h-80 w-80 rounded-full bg-slate-200/70 blur-3xl" />
                 <div className="absolute -bottom-28 left-0 h-80 w-80 rounded-full bg-slate-100/80 blur-3xl" />
             </div>
-            <div className="relative mx-auto flex min-h-screen w-full max-w-6xl flex-col items-center justify-center px-4 py-12">
+            <div className="relative mx-auto flex min-h-screen w-full max-w-6xl flex-col items-center justify-center px-4 py-12  max-w-lg">
                 <div className="w-full max-w-4xl rounded-3xl border border-slate-200 bg-white/80 p-8 shadow-xl shadow-slate-900/5 backdrop-blur">
                     {error && (
                         <div className="mb-6 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
@@ -29,15 +29,21 @@ export default function Landing({ googleRedirect }) {
 
                         <div className="rounded-2xl border border-slate-200 bg-slate-50 p-6">
 
-                            <div className="flex items-center gap-3">
-                                <ApplicationLogo className="h-12 w-12 fill-current text-slate-900" />
+                            <div className="flex flex-col justify-center items-center gap-2">
+                               <div className="flex flex-row items-center">
+
                                 <span className="text-2xl font-semibold">
+
                                     Moods
                                 </span>
-                            </div>  <p className="text-sm font-semibold text-slate-700">
+                                <ApplicationLogo className="h-12 w-12 fill-current text-slate-900 mr-2" />
+
+                            </div>
+                            <p className="text-sm font-semibold  text-slate-700">
                                 Ready for a quick check-in?
                             </p>
-                            <div className="mt-4 space-y-3">
+                            </div>
+                            <div className="mt-4 space-y-3 text-center">
                                 {user ? (
                                     <Link
                                         href={route('log')}
@@ -59,6 +65,9 @@ export default function Landing({ googleRedirect }) {
                                 )}
                                 <p className="text-xs text-slate-500">
                                     We only support Google sign-in.
+                                </p>
+                                   <p className="text-xs text-slate-500">
+                                    Version 1.0.0
                                 </p>
 
                             </div>
