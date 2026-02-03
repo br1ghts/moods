@@ -53,6 +53,7 @@ Minimal Laravel 12 + Inertia + React experience to log how you feel, keep histor
 - Example requests:
     - `GET /api/{API_KEY}/log/happy`
     - `GET /api/{API_KEY}/log/happy?note=feeling%20great`
+    - `GET /api/{API_KEY}/list`
     - `POST /api/log` with `Authorization: Bearer {API_KEY}` and JSON body `{ "mood": "happy", "note": "feeling great" }`
 - Treat the API key like a password. Anyone with it can log moods to your account.
 

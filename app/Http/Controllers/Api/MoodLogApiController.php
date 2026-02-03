@@ -39,6 +39,32 @@ class MoodLogApiController extends Controller
         return $this->handleLog($request, $token, $moodKey, $note, $intensity);
     }
 
+    public function listMoods(Request $request, string $token)
+    {
+        if (strlen($token) < self::TOKEN_MIN_LENGTH) {
+            return $this->errorResponse('invalid_token', 'Invalid API token.', 401);
+        }
+
+        $user = $this->userFromToken($token);
+
+        if (! $user) {
+            return $this->errorResponse('invalid_token', 'Invalid API token.', 401);
+        }
+
+        if (! $user->api_enabled) {
+            return $this->errorResponse('api_disabled', 'API access disabled for this account.', 403);
+        }
+
+        $moods = Mood::where('is_active', true)
+            ->orderBy('sort_order')
+            ->get(['key', 'label', 'emoji', 'color']);
+
+        return response()->json([
+            'ok' => true,
+            'moods' => $moods,
+        ]);
+    }
+
     private function handleLog(Request $request, string $token, ?string $moodKey, ?string $note, $intensityInput)
     {
         if (strlen($token) < self::TOKEN_MIN_LENGTH) {

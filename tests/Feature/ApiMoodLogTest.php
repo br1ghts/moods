@@ -118,4 +118,25 @@ class ApiMoodLogTest extends TestCase
 
         $response->assertStatus(429);
     }
+
+    public function test_list_moods_returns_active_moods(): void
+    {
+        $this->seed(MoodSeeder::class);
+
+        $user = User::factory()->create();
+        $token = $user->regenerateApiToken();
+
+        $response = $this->getJson("/api/{$token}/list");
+
+        $response
+            ->assertOk()
+            ->assertJson([
+                'ok' => true,
+            ])
+            ->assertJsonStructure([
+                'moods' => [
+                    '*' => ['key', 'label', 'emoji', 'color'],
+                ],
+            ]);
+    }
 }
