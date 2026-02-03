@@ -207,6 +207,11 @@ const ChartLegend = ({ moods, activeKey, onHighlight }) => (
     </div>
 );
 
+const getActiveMoodKeys = (data = [], moods = []) =>
+    moods
+        .map((mood) => mood.key)
+        .filter((key) => data.some((row) => (row[key] ?? 0) > 0));
+
 const MinimalTooltip = ({ active, label, payload, moodLookup }) => {
     if (!active || !payload?.length) {
         return null;
@@ -527,6 +532,46 @@ export default function Insights() {
         return chartData.daily.slice(-dailyRange);
     }, [chartData, dailyRange]);
 
+    const dailyActiveMoodKeys = useMemo(
+        () => getActiveMoodKeys(dailyData, moods),
+        [dailyData, moods],
+    );
+    const hourlyActiveMoodKeys = useMemo(
+        () => getActiveMoodKeys(chartData?.hourly ?? [], moods),
+        [chartData, moods],
+    );
+
+    const dailyLegendMoods = useMemo(() => {
+        if (dailyActiveMoodKeys.length === 0) {
+            return [];
+        }
+        const activeKeys = new Set(dailyActiveMoodKeys);
+        return moods.filter((mood) => activeKeys.has(mood.key));
+    }, [dailyActiveMoodKeys, moods]);
+
+    const hourlyLegendMoods = useMemo(() => {
+        if (hourlyActiveMoodKeys.length === 0) {
+            return [];
+        }
+        const activeKeys = new Set(hourlyActiveMoodKeys);
+        return moods.filter((mood) => activeKeys.has(mood.key));
+    }, [hourlyActiveMoodKeys, moods]);
+
+    useEffect(() => {
+        if (highlightedDailyMood && !dailyActiveMoodKeys.includes(highlightedDailyMood)) {
+            setHighlightedDailyMood(null);
+        }
+    }, [dailyActiveMoodKeys, highlightedDailyMood]);
+
+    useEffect(() => {
+        if (
+            highlightedHourlyMood &&
+            !hourlyActiveMoodKeys.includes(highlightedHourlyMood)
+        ) {
+            setHighlightedHourlyMood(null);
+        }
+    }, [hourlyActiveMoodKeys, highlightedHourlyMood]);
+
     const updateActiveBucket = useCallback((event, setter) => {
         const next = event?.activePayload?.[0]?.payload ?? null;
         setter((prev) => {
@@ -653,11 +698,17 @@ export default function Insights() {
                                         ) : null}
                                     </div>
                                     <div className="mt-5">
-                                        <ChartLegend
-                                            moods={moods}
-                                            activeKey={highlightedDailyMood}
-                                            onHighlight={setHighlightedDailyMood}
-                                        />
+                                        {dailyLegendMoods.length === 0 ? (
+                                            <p className="text-xs font-semibold text-slate-500">
+                                                No mood data for this range.
+                                            </p>
+                                        ) : (
+                                            <ChartLegend
+                                                moods={dailyLegendMoods}
+                                                activeKey={highlightedDailyMood}
+                                                onHighlight={setHighlightedDailyMood}
+                                            />
+                                        )}
                                     </div>
                                 </ChartCard>
 
@@ -688,11 +739,17 @@ export default function Insights() {
                                         ) : null}
                                     </div>
                                     <div className="mt-4">
-                                        <ChartLegend
-                                            moods={moods}
-                                            activeKey={highlightedHourlyMood}
-                                            onHighlight={setHighlightedHourlyMood}
-                                        />
+                                        {hourlyLegendMoods.length === 0 ? (
+                                            <p className="text-xs font-semibold text-slate-500">
+                                                No mood data for this range.
+                                            </p>
+                                        ) : (
+                                            <ChartLegend
+                                                moods={hourlyLegendMoods}
+                                                activeKey={highlightedHourlyMood}
+                                                onHighlight={setHighlightedHourlyMood}
+                                            />
+                                        )}
                                     </div>
                                 </ChartCard>
                             </div>
