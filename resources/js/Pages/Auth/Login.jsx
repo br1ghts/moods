@@ -47,12 +47,7 @@ export default function Login({ googleRedirect, status }) {
                     We only support Google sign-in.
                 </p>
 
-                <Link
-                    href={route('landing')}
-                    className="text-xs font-semibold uppercase tracking-widest text-slate-500 transition hover:text-slate-700"
-                >
-                    Back to home
-                </Link>
+
             </div>
         </GuestLayout>
     );
