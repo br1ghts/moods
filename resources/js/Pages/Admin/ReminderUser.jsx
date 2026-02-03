@@ -100,6 +100,7 @@ export default function ReminderUser({ user, setting, sends }) {
                                     <th className="px-4 py-3">Status</th>
                                     <th className="px-4 py-3">Due (UTC)</th>
                                     <th className="px-4 py-3">Attempted</th>
+                                    <th className="px-4 py-3">Completed</th>
                                     <th className="px-4 py-3">Devices</th>
                                     <th className="px-4 py-3">Failure</th>
                                 </tr>
@@ -118,6 +119,7 @@ export default function ReminderUser({ user, setting, sends }) {
                                         <td className="px-4 py-3 text-xs text-slate-600">{send.status}</td>
                                         <td className="px-4 py-3 text-xs text-slate-600">{formatDateTime(send.due_at_utc)}</td>
                                         <td className="px-4 py-3 text-xs text-slate-600">{formatDateTime(send.attempted_at_utc)}</td>
+                                        <td className="px-4 py-3 text-xs text-slate-600">{formatDateTime(send.completed_at_utc)}</td>
                                         <td className="px-4 py-3 text-xs text-slate-600">
                                             {send.devices_succeeded}/{send.devices_targeted}
                                         </td>

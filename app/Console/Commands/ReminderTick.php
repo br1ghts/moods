@@ -36,8 +36,21 @@ class ReminderTick extends Command
         $countDispatched = 0;
         $countSkipped = 0;
         $countInitialized = 0;
+        $countStaleFailed = 0;
 
         try {
+            $staleCutoff = $nowUtc->copy()->subMinutes(2);
+            $countStaleFailed = ReminderSend::query()
+                ->where('status', 'queued')
+                ->whereNull('attempted_at_utc')
+                ->where('due_at_utc', '<=', $staleCutoff)
+                ->update([
+                    'status' => 'failed',
+                    'failure_reason' => 'stale_queued',
+                    'attempted_at_utc' => $nowUtc,
+                    'completed_at_utc' => $nowUtc,
+                ]);
+
             $missing = NotificationSetting::query()
                 ->where('enabled', true)
                 ->whereNull('next_due_at')
@@ -97,10 +110,11 @@ class ReminderTick extends Command
                 'count_dispatched' => $countDispatched,
                 'count_skipped_duplicate' => $countSkipped,
                 'count_initialized' => $countInitialized,
+                'count_stale_failed' => $countStaleFailed,
                 'tick_duration_ms' => $durationMs,
             ]);
 
-            $this->info("Tick complete. due={$countDue} dispatched={$countDispatched} skipped={$countSkipped} initialized={$countInitialized}");
+            $this->info("Tick complete. due={$countDue} dispatched={$countDispatched} skipped={$countSkipped} initialized={$countInitialized} stale_failed={$countStaleFailed}");
         } finally {
             $lock->release();
         }

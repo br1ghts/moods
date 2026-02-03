@@ -14,6 +14,7 @@ class ReminderSend extends Model
         'bucket_key',
         'due_at_utc',
         'attempted_at_utc',
+        'completed_at_utc',
         'status',
         'failure_reason',
         'devices_targeted',
@@ -25,6 +26,7 @@ class ReminderSend extends Model
     protected $casts = [
         'due_at_utc' => 'datetime',
         'attempted_at_utc' => 'datetime',
+        'completed_at_utc' => 'datetime',
         'created_at' => 'datetime',
     ];
 

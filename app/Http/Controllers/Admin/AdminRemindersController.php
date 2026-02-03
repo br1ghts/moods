@@ -58,9 +58,17 @@ class AdminRemindersController extends Controller
             ->limit(10)
             ->get();
 
+        $queueStats = [
+            'pending' => DB::table('jobs')->count(),
+            'reserved' => DB::table('jobs')->whereNotNull('reserved_at')->count(),
+            'failed' => DB::table('failed_jobs')->count(),
+            'oldest_available_at' => DB::table('jobs')->min('available_at'),
+        ];
+
         return Inertia::render('Admin/Reminders', [
             'lastTickAt' => Cache::get('reminders:last_tick_at'),
             'dueCount' => $dueCount,
+            'queueStats' => $queueStats,
             'dueSettings' => $dueSettings->map(function ($setting) use ($recentByUser) {
                 return [
                     'id' => $setting->id,
@@ -86,6 +94,7 @@ class AdminRemindersController extends Controller
                             'failure_reason' => $send->failure_reason,
                             'due_at_utc' => $send->due_at_utc,
                             'attempted_at_utc' => $send->attempted_at_utc,
+                            'completed_at_utc' => $send->completed_at_utc,
                             'devices_targeted' => $send->devices_targeted,
                             'devices_succeeded' => $send->devices_succeeded,
                             'devices_failed' => $send->devices_failed,
@@ -102,6 +111,7 @@ class AdminRemindersController extends Controller
                     'failure_reason' => $send->failure_reason,
                     'due_at_utc' => $send->due_at_utc,
                     'attempted_at_utc' => $send->attempted_at_utc,
+                    'completed_at_utc' => $send->completed_at_utc,
                     'devices_targeted' => $send->devices_targeted,
                     'devices_succeeded' => $send->devices_succeeded,
                     'devices_failed' => $send->devices_failed,
@@ -143,6 +153,7 @@ class AdminRemindersController extends Controller
                     'failure_reason' => $send->failure_reason,
                     'due_at_utc' => $send->due_at_utc,
                     'attempted_at_utc' => $send->attempted_at_utc,
+                    'completed_at_utc' => $send->completed_at_utc,
                     'devices_targeted' => $send->devices_targeted,
                     'devices_succeeded' => $send->devices_succeeded,
                     'devices_failed' => $send->devices_failed,

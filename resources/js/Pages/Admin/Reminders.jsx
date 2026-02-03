@@ -13,7 +13,19 @@ const formatDateTime = (value) => {
     return date.toLocaleString();
 };
 
-export default function Reminders({ lastTickAt, dueCount, dueSettings, recentSends, failureGroups }) {
+const formatQueueAge = (timestamp) => {
+    if (!timestamp) return '—';
+    const ms = Number(timestamp) * 1000;
+    if (Number.isNaN(ms)) return '—';
+    const ageMs = Date.now() - ms;
+    if (ageMs < 0) return '0s';
+    const seconds = Math.floor(ageMs / 1000);
+    if (seconds < 60) return `${seconds}s`;
+    const minutes = Math.floor(seconds / 60);
+    return `${minutes}m`;
+};
+
+export default function Reminders({ lastTickAt, dueCount, dueSettings, recentSends, failureGroups, queueStats }) {
     const runTick = () => {
         router.post(route('admin.reminders.tick'), {}, { preserveScroll: true });
     };
@@ -50,7 +62,7 @@ export default function Reminders({ lastTickAt, dueCount, dueSettings, recentSen
                         </div>
                     </div>
 
-                    <div className="mt-6 grid gap-4 sm:grid-cols-3">
+                    <div className="mt-6 grid gap-4 sm:grid-cols-4">
                         <div className="rounded-2xl border border-slate-100 bg-slate-50 px-4 py-3">
                             <p className="text-xs uppercase tracking-[0.3em] text-slate-400">Last tick</p>
                             <p className="mt-2 text-sm font-semibold text-slate-700">{formatDateTime(lastTickAt)}</p>
@@ -68,6 +80,15 @@ export default function Reminders({ lastTickAt, dueCount, dueSettings, recentSen
                                         {group.failure_reason}: {group.count}
                                     </span>
                                 ))}
+                            </div>
+                        </div>
+                        <div className="rounded-2xl border border-slate-100 bg-slate-50 px-4 py-3">
+                            <p className="text-xs uppercase tracking-[0.3em] text-slate-400">Queue</p>
+                            <div className="mt-2 space-y-1 text-sm text-slate-600">
+                                <div>Pending: {queueStats?.pending ?? 0}</div>
+                                <div>Reserved: {queueStats?.reserved ?? 0}</div>
+                                <div>Failed: {queueStats?.failed ?? 0}</div>
+                                <div>Oldest: {formatQueueAge(queueStats?.oldest_available_at)}</div>
                             </div>
                         </div>
                     </div>

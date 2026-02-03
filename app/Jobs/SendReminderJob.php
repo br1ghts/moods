@@ -48,6 +48,7 @@ class SendReminderJob implements ShouldQueue
             $reminderSend->forceFill([
                 'status' => 'skipped',
                 'failure_reason' => 'already_attempted',
+                'completed_at_utc' => now('UTC'),
             ])->save();
 
             return;
@@ -55,6 +56,7 @@ class SendReminderJob implements ShouldQueue
 
         $reminderSend->forceFill([
             'attempted_at_utc' => now('UTC'),
+            'status' => 'sending',
         ])->save();
 
         $user = User::query()->with('pushSubscriptions')->find($this->userId);
@@ -63,6 +65,7 @@ class SendReminderJob implements ShouldQueue
             $reminderSend->forceFill([
                 'status' => 'failed',
                 'failure_reason' => 'user_missing',
+                'completed_at_utc' => now('UTC'),
             ])->save();
 
             return;
@@ -75,52 +78,74 @@ class SendReminderJob implements ShouldQueue
                 'status' => 'failed',
                 'failure_reason' => 'no_subscriptions',
                 'devices_targeted' => 0,
+                'completed_at_utc' => now('UTC'),
             ])->save();
 
             return;
         }
 
-        $notification = new MoodReminderNotification();
-        $payload = $notification->toPushService($user);
+        try {
+            $notification = new MoodReminderNotification();
+            $payload = $notification->toPushService($user);
 
-        $result = $pushService->sendToUser(
-            $user,
-            $payload['title'] ?? 'Mood check-in',
-            $payload['body'] ?? 'Take a moment to log how you\'re feeling.',
-            $payload['data'] ?? [],
-        );
+            $result = $pushService->sendToUser(
+                $user,
+                $payload['title'] ?? 'Mood check-in',
+                $payload['body'] ?? 'Take a moment to log how you\'re feeling.',
+                $payload['data'] ?? [],
+            );
 
-        $sent = (int) ($result['sent'] ?? 0);
-        $failed = (int) ($result['failed'] ?? 0);
-        $expired = (int) ($result['expired'] ?? 0);
-        $devicesFailed = $failed + $expired;
-        $status = $sent > 0 ? 'sent' : 'failed';
-        $failureReason = null;
+            $sent = (int) ($result['sent'] ?? 0);
+            $failed = (int) ($result['failed'] ?? 0);
+            $expired = (int) ($result['expired'] ?? 0);
+            $devicesFailed = $failed + $expired;
+            $status = $sent > 0 ? 'sent' : 'failed';
+            $failureReason = null;
 
-        if ($sent === 0) {
-            $failureReason = $expired === $devicesTargeted ? 'all_expired' : 'all_failed';
+            if ($sent === 0) {
+                $failureReason = $expired === $devicesTargeted ? 'all_expired' : 'all_failed';
+            }
+
+            $reminderSend->forceFill([
+                'status' => $status,
+                'failure_reason' => $failureReason,
+                'devices_targeted' => $devicesTargeted,
+                'devices_succeeded' => $sent,
+                'devices_failed' => $devicesFailed,
+                'completed_at_utc' => now('UTC'),
+            ])->save();
+
+            if ($status === 'sent') {
+                NotificationSetting::query()
+                    ->where('user_id', $this->userId)
+                    ->update(['last_sent_at' => now('UTC')]);
+            }
+
+            Log::info('[REMINDERS] send.done', [
+                'user_id' => $this->userId,
+                'bucket_key' => $this->bucketKey,
+                'status' => $status,
+                'sent' => $sent,
+                'failed' => $devicesFailed,
+            ]);
+        } catch (\Throwable $exception) {
+            $message = trim($exception->getMessage());
+            $reminderSend->forceFill([
+                'status' => 'failed',
+                'failure_reason' => $message !== '' ? $message : 'exception',
+                'devices_targeted' => $devicesTargeted,
+                'devices_succeeded' => 0,
+                'devices_failed' => $devicesTargeted,
+                'completed_at_utc' => now('UTC'),
+            ])->save();
+
+            Log::error('[REMINDERS] send.exception', [
+                'user_id' => $this->userId,
+                'bucket_key' => $this->bucketKey,
+                'message' => $exception->getMessage(),
+            ]);
+
+            throw $exception;
         }
-
-        $reminderSend->forceFill([
-            'status' => $status,
-            'failure_reason' => $failureReason,
-            'devices_targeted' => $devicesTargeted,
-            'devices_succeeded' => $sent,
-            'devices_failed' => $devicesFailed,
-        ])->save();
-
-        if ($status === 'sent') {
-            NotificationSetting::query()
-                ->where('user_id', $this->userId)
-                ->update(['last_sent_at' => now('UTC')]);
-        }
-
-        Log::info('[REMINDERS] send.done', [
-            'user_id' => $this->userId,
-            'bucket_key' => $this->bucketKey,
-            'status' => $status,
-            'sent' => $sent,
-            'failed' => $devicesFailed,
-        ]);
     }
 }

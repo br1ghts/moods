@@ -16,11 +16,17 @@ class GoogleController extends Controller
 
     public function callback()
     {
-        $googleUser = Socialite::driver('google')->stateless()->user();
+        try {
+            $googleUser = Socialite::driver('google')->stateless()->user();
+        } catch (\Throwable $e) {
+            return redirect()
+                ->route('login')
+                ->with('error', 'Google sign-in failed. Please try again.');
+        }
 
         if (! $googleUser->getEmail()) {
             return redirect()
-                ->route('landing')
+                ->route('login')
                 ->with('error', 'Google account did not provide an email.');
         }
 
