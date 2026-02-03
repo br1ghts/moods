@@ -30,6 +30,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/api/insights', [InsightsController::class, 'data'])->name('insights.data');
     Route::get('/settings', [SettingsController::class, 'edit'])->name('settings');
     Route::put('/settings/notifications', [SettingsController::class, 'update'])->name('settings.notifications.update');
+    Route::post('/settings/api-key/regenerate', [SettingsController::class, 'regenerateApiToken'])->name('settings.api-key.regenerate');
     Route::post('/push/subscribe', [PushController::class, 'subscribe'])->name('push.subscribe');
     Route::delete('/push/unsubscribe', [PushController::class, 'unsubscribe'])->name('push.unsubscribe');
     Route::get('/push/subscriptions', [PushController::class, 'index'])->name('push.subscriptions.index');

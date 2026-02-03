@@ -47,6 +47,15 @@ Minimal Laravel 12 + Inertia + React experience to log how you feel, keep histor
 - `php artisan test`
 - `npm run dev`
 
+## API key logging
+
+- Generate or regenerate your API key from `/settings`.
+- Example requests:
+    - `GET /api/{API_KEY}/log/happy`
+    - `GET /api/{API_KEY}/log/happy?note=feeling%20great`
+    - `POST /api/log` with `Authorization: Bearer {API_KEY}` and JSON body `{ "mood": "happy", "note": "feeling great" }`
+- Treat the API key like a password. Anyone with it can log moods to your account.
+
 ## Testing
 
 `php artisan test` runs the feature suite that verifies auth gating and mood entry creation.

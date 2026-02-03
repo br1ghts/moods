@@ -87,12 +87,16 @@ class SendReminderJob implements ShouldQueue
         try {
             $notification = new MoodReminderNotification();
             $payload = $notification->toPushService($user);
+            $data = array_merge($payload['data'] ?? [], [
+                'bucket_key' => $this->bucketKey,
+                'sent_at' => now('UTC')->toIso8601String(),
+            ]);
 
             $result = $pushService->sendToUser(
                 $user,
                 $payload['title'] ?? 'Mood check-in',
                 $payload['body'] ?? 'Take a moment to log how you\'re feeling.',
-                $payload['data'] ?? [],
+                $data,
             );
 
             $sent = (int) ($result['sent'] ?? 0);

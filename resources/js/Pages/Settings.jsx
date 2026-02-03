@@ -44,7 +44,13 @@ function urlBase64ToUint8Array(base64String) {
     return outputArray;
 }
 
-export default function Settings({ notificationSettings, pushStatus = {}, isAdmin = false }) {
+export default function Settings({
+    notificationSettings,
+    pushStatus = {},
+    isAdmin = false,
+    apiKey = {},
+    appUrl = '',
+}) {
     const {
         subscriptions = [],
     } = pushStatus;
@@ -82,6 +88,11 @@ export default function Settings({ notificationSettings, pushStatus = {}, isAdmi
     const [pushProcessing, setPushProcessing] = useState(false);
     const [pushError, setPushError] = useState('');
     const [testResult, setTestResult] = useState(null);
+    const [apiToken, setApiToken] = useState(apiKey?.token ?? '');
+    const [showApiToken, setShowApiToken] = useState(false);
+    const [apiCopyStatus, setApiCopyStatus] = useState('');
+    const [apiProcessing, setApiProcessing] = useState(false);
+    const [apiError, setApiError] = useState('');
 
     useEffect(() => {
         if (typeof window === 'undefined') {
@@ -130,6 +141,42 @@ export default function Settings({ notificationSettings, pushStatus = {}, isAdmi
         form.put(route('settings.notifications.update'), {
             preserveScroll: true,
         });
+    };
+
+    const handleCopyApiToken = async () => {
+        if (!apiToken) {
+            return;
+        }
+
+        try {
+            await navigator.clipboard.writeText(apiToken);
+            setApiCopyStatus('Copied!');
+        } catch (error) {
+            setApiCopyStatus('Copy failed');
+        }
+
+        setTimeout(() => setApiCopyStatus(''), 2000);
+    };
+
+    const handleRegenerateApiToken = async () => {
+        if (!window.confirm('Regenerate your API key? This will invalidate the old one.')) {
+            return;
+        }
+
+        setApiProcessing(true);
+        setApiError('');
+
+        try {
+            const { data } = await axios.post(route('settings.api-key.regenerate'));
+            setApiToken(data?.token ?? '');
+            setShowApiToken(true);
+        } catch (error) {
+            setApiError(
+                error?.response?.data?.message || 'Unable to regenerate API key.',
+            );
+        } finally {
+            setApiProcessing(false);
+        }
     };
 
     const handleEnablePush = async () => {
@@ -393,6 +440,16 @@ export default function Settings({ notificationSettings, pushStatus = {}, isAdmi
         { label: 'Saved subscriptions', value: String(subscriptionList.length) },
     ];
 
+    const maskedToken = apiToken
+        ? apiToken.replace(/.(?=.{4})/g, '•')
+        : '—';
+    const baseUrl =
+        typeof window !== 'undefined' && window.location?.origin
+            ? window.location.origin
+            : appUrl;
+    const exampleToken = apiToken || 'YOUR_API_KEY';
+    const exampleBase = baseUrl ? `${baseUrl}/api/${exampleToken}/log` : `/api/${exampleToken}/log`;
+
     return (
         <div className="space-y-6">
             <section className="rounded-3xl border border-slate-200 bg-white/90 p-6 shadow-lg shadow-slate-900/5">
@@ -551,6 +608,77 @@ export default function Settings({ notificationSettings, pushStatus = {}, isAdmi
                         </button>
                     </div>
                 </form>
+            </section>
+
+            <section className="rounded-3xl border border-slate-200 bg-white/90 p-6 shadow-lg shadow-slate-900/5">
+                <div className="flex flex-wrap items-start justify-between gap-4">
+                    <div>
+                        <h2 className="text-xl font-semibold text-slate-900">
+                            API Key
+                        </h2>
+                        <p className="text-sm text-slate-500">
+                            Use this key to log moods from Apple Shortcuts or other tools.
+                        </p>
+                    </div>
+                    <button
+                        type="button"
+                        onClick={handleRegenerateApiToken}
+                        disabled={apiProcessing}
+                        className="rounded-full border border-slate-200 bg-white px-5 py-2 text-xs font-semibold uppercase tracking-widest text-slate-900 disabled:cursor-not-allowed disabled:opacity-60"
+                    >
+                        Regenerate Key
+                    </button>
+                </div>
+
+                <div className="mt-4 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
+                    <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">
+                        API key
+                    </p>
+                    <div className="mt-2 flex flex-wrap items-center gap-3">
+                        <code className="rounded-xl bg-white px-3 py-2 text-xs text-slate-700">
+                            {showApiToken ? apiToken || '—' : maskedToken}
+                        </code>
+                        <button
+                            type="button"
+                            onClick={() => setShowApiToken((prev) => !prev)}
+                            className="text-xs font-semibold text-slate-600 underline-offset-4 hover:underline"
+                        >
+                            {showApiToken ? 'Hide' : 'Reveal'}
+                        </button>
+                        <button
+                            type="button"
+                            onClick={handleCopyApiToken}
+                            className="text-xs font-semibold text-slate-600 underline-offset-4 hover:underline"
+                        >
+                            Copy
+                        </button>
+                        {apiCopyStatus && (
+                            <span className="text-xs text-emerald-600">
+                                {apiCopyStatus}
+                            </span>
+                        )}
+                    </div>
+                </div>
+
+                <div className="mt-4 space-y-2 text-xs text-slate-600">
+                    <p className="font-semibold text-slate-700">Example URLs</p>
+                    <code className="block rounded-xl bg-slate-50 px-3 py-2 text-[11px] text-slate-700">
+                        {exampleBase}/happy
+                    </code>
+                    <code className="block rounded-xl bg-slate-50 px-3 py-2 text-[11px] text-slate-700">
+                        {exampleBase}/happy?note=feeling%20great
+                    </code>
+                </div>
+
+                <p className="mt-4 text-xs text-amber-700">
+                    Treat this like a password. Anyone with this key can log moods to your account.
+                </p>
+
+                {apiError && (
+                    <p className="mt-2 text-xs font-semibold text-red-600">
+                        {apiError}
+                    </p>
+                )}
             </section>
 
             <section className="rounded-3xl border border-slate-200 bg-white/90 p-6 shadow-lg shadow-slate-900/5">

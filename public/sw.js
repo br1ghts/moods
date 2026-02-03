@@ -23,16 +23,25 @@ self.addEventListener('push', (event) => {
         }
     }
 
+    const tag = payload.data?.bucket_key || 'mood-reminder';
     const options = {
         body: payload.body,
         data: payload.data,
         icon: '/favicon.ico',
         badge: '/favicon.ico',
-        tag: 'mood-reminder',
+        tag,
         renotify: false,
     };
 
-    event.waitUntil(self.registration.showNotification(payload.title, options));
+    event.waitUntil(
+        self.registration.getNotifications({ tag }).then((existing) => {
+            if (existing && existing.length > 0) {
+                return;
+            }
+
+            return self.registration.showNotification(payload.title, options);
+        }),
+    );
 });
 
 self.addEventListener('notificationclick', (event) => {

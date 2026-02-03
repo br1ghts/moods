@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\UpdateNotificationSettingsRequest;
 use App\Services\ReminderScheduler;
+use Illuminate\Http\Request;
 use Inertia\Inertia;
 
 class SettingsController extends Controller
@@ -11,6 +12,7 @@ class SettingsController extends Controller
     public function edit()
     {
         $user = request()->user();
+        $apiToken = $user->ensureApiToken();
         $settings = $user->notificationSetting ?? $user->notificationSetting()->create([
             'enabled' => false,
             'cadence' => 'daily',
@@ -48,6 +50,11 @@ class SettingsController extends Controller
                 'subscriptionsCount' => $subscriptions->count(),
                 'subscriptions' => $subscriptions,
             ],
+            'apiKey' => [
+                'token' => $apiToken,
+                'enabled' => $user->api_enabled ?? true,
+            ],
+            'appUrl' => config('app.url'),
         ]);
     }
 
@@ -86,6 +93,17 @@ class SettingsController extends Controller
         return redirect()
             ->route('settings')
             ->with('success', 'Notification preferences updated.');
+    }
+
+    public function regenerateApiToken(Request $request)
+    {
+        $user = $request->user();
+        $token = $user->regenerateApiToken();
+
+        return response()->json([
+            'ok' => true,
+            'token' => $token,
+        ]);
     }
 
     protected function truncateEndpoint(string $endpoint): string
