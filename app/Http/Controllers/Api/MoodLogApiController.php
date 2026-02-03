@@ -114,11 +114,12 @@ class MoodLogApiController extends Controller
             return $this->errorResponse('unknown_mood', 'Unknown mood key.', 400);
         }
 
+        $timezone = $this->resolveUserTimezone($user);
         $entry = $user->moodEntries()->create([
             'mood_id' => $mood->id,
             'intensity' => $intensity,
             'notes' => $note,
-            'occurred_at' => Carbon::now('UTC'),
+            'occurred_at' => Carbon::now($timezone),
         ]);
 
         Log::info('api_mood_log', [
@@ -187,6 +188,11 @@ class MoodLogApiController extends Controller
         }
 
         return $user;
+    }
+
+    private function resolveUserTimezone(User $user): string
+    {
+        return $user->notificationSetting?->timezone ?? self::DEFAULT_TIMEZONE;
     }
 
     private function errorResponse(string $code, string $message, int $status)
