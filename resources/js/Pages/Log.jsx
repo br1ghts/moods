@@ -2,18 +2,7 @@ import { router } from '@inertiajs/react';
 import { useMemo, useState } from 'react';
 import AppLayout from '@/Layouts/AppLayout';
 import MoodWheel from '@/Components/MoodWheel';
-const colorClasses = {
-    yellow: 'bg-yellow-400',
-    emerald: 'bg-emerald-400',
-    blue: 'bg-blue-400',
-    slate: 'bg-slate-400',
-    orange: 'bg-orange-400',
-    indigo: 'bg-indigo-400',
-    red: 'bg-red-400',
-    teal: 'bg-teal-400',
-    purple: 'bg-purple-400',
-    pink: 'bg-pink-400',
-};
+import { getMoodColorClass } from '@/utils/moodColors';
 
 const recentEntryFormatter = new Intl.DateTimeFormat('en-US', {
     month: 'short',
@@ -136,10 +125,10 @@ export default function Log({ moods, recentEntries }) {
                                     {mood.label}
                                 </span>
                                 <span
-                                    className={`h-2 w-6 rounded-full ${
-                                        colorClasses[mood.color] ??
-                                        'bg-slate-200'
-                                    }`}
+                                    className={`h-2 w-6 rounded-full ${getMoodColorClass(
+                                        mood.color,
+                                        400,
+                                    )}`}
                                 />
                             </button>
                         ))}

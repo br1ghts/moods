@@ -239,7 +239,7 @@ class AdminEmotionsController extends Controller
                 Rule::unique('moods', 'key')->ignore($emotion?->id),
             ],
             'emoji' => ['nullable', 'string', 'max:10'],
-            'color' => ['nullable', 'string', 'max:255'],
+            'color' => ['nullable', 'string', Rule::in($this->allowedColors())],
             'sort_order' => ['nullable', 'integer', 'min:0'],
             'is_active' => ['sometimes', 'boolean'],
         ];
@@ -265,5 +265,28 @@ class AdminEmotionsController extends Controller
         }
 
         return $max + 1;
+    }
+
+    private function allowedColors(): array
+    {
+        static $colors = null;
+
+        if (! is_null($colors)) {
+            return $colors;
+        }
+
+        $path = resource_path('js/moods/colors.json');
+
+        if (! file_exists($path)) {
+            $colors = [];
+            return $colors;
+        }
+
+        $decoded = json_decode((string) file_get_contents($path), true);
+        $colors = is_array($decoded)
+            ? array_values(array_filter($decoded, fn ($value) => is_string($value) && $value !== ''))
+            : [];
+
+        return $colors;
     }
 }

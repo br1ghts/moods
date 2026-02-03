@@ -1,19 +1,7 @@
 import AdminLayout from '@/Layouts/AdminLayout';
+import { getMoodColorClass } from '@/utils/moodColors';
 import { Link, router, useForm } from '@inertiajs/react';
 import { useState } from 'react';
-
-const colorClasses = {
-    yellow: 'bg-yellow-400',
-    emerald: 'bg-emerald-400',
-    blue: 'bg-blue-400',
-    slate: 'bg-slate-400',
-    orange: 'bg-orange-400',
-    indigo: 'bg-indigo-400',
-    red: 'bg-red-400',
-    teal: 'bg-teal-400',
-    purple: 'bg-purple-400',
-    pink: 'bg-pink-400',
-};
 
 export default function EmotionsIndex({ emotions }) {
     const [running, setRunning] = useState(null);
@@ -124,9 +112,10 @@ export default function EmotionsIndex({ emotions }) {
                                     <td className="px-4 py-3">
                                         <span className="flex items-center gap-2 text-sm">
                                             <span
-                                                className={`inline-flex h-3 w-12 rounded-full ${
-                                                    colorClasses[emotion.color] ?? 'bg-slate-300'
-                                                }`}
+                                                className={`inline-flex h-3 w-12 rounded-full ${getMoodColorClass(
+                                                    emotion.color,
+                                                    400,
+                                                )}`}
                                             />
                                             {emotion.color || '—'}
                                         </span>

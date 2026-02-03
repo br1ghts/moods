@@ -1,21 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { getMoodColorClass } from '@/utils/moodColors';
 
 const ITEM_HEIGHT_PX = 64; // Tailwind h-16
 const SPACER_HEIGHT_PX = 80; // Tailwind h-20
 const SETTLE_MS = 90;
-
-const colorClasses = {
-    yellow: 'bg-yellow-400',
-    emerald: 'bg-emerald-400',
-    blue: 'bg-blue-400',
-    slate: 'bg-slate-400',
-    orange: 'bg-orange-400',
-    indigo: 'bg-indigo-400',
-    red: 'bg-red-400',
-    teal: 'bg-teal-400',
-    purple: 'bg-purple-400',
-    pink: 'bg-pink-400',
-};
 
 const clamp = (value, min, max) => Math.min(Math.max(value, min), max);
 
@@ -159,8 +147,7 @@ export default function MoodWheel({ moods, value, onChange }) {
                 <div aria-hidden className="h-20" />
                 {moods.map((mood, index) => {
                     const isActive = index === activeIndex;
-                    const colorClass =
-                        colorClasses[mood.color] ?? 'bg-slate-200';
+                    const colorClass = getMoodColorClass(mood.color, 400);
 
                     return (
                         <button

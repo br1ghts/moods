@@ -12,20 +12,7 @@ import {
     YAxis,
     Tooltip,
 } from 'recharts';
-
-const chartColorMap = {
-    emerald: '#10b981',
-    yellow: '#eab308',
-    blue: '#3b82f6',
-    slate: '#64748b',
-    orange: '#f97316',
-    indigo: '#6366f1',
-    red: '#ef4444',
-    teal: '#14b8a6',
-    purple: '#a855f7',
-    pink: '#ec4899',
-};
-const fallbackColor = '#94a3b8';
+import { getMoodColorHex } from '@/utils/moodColors';
 
 const monthFormatter = new Intl.DateTimeFormat('en-US', {
     month: 'short',
@@ -40,8 +27,6 @@ const dayTooltipFormatter = new Intl.DateTimeFormat('en-US', {
     month: 'short',
     day: 'numeric',
 });
-
-const getMoodColor = (color) => chartColorMap[color] ?? fallbackColor;
 
 const parseLocalDate = (value) => {
     if (!value) {
@@ -195,7 +180,7 @@ const ChartLegend = ({ moods, activeKey, onHighlight }) => (
         onMouseLeave={() => onHighlight?.(null)}
     >
         {moods.map((mood) => {
-            const color = getMoodColor(mood.color);
+            const color = getMoodColorHex(mood.color);
             const isActive = !activeKey || activeKey === mood.key;
 
             return (
@@ -259,7 +244,7 @@ const InsightChart = ({
     }
 
     const barsOrAreas = moods.map((mood) => {
-        const color = getMoodColor(mood.color);
+        const color = getMoodColorHex(mood.color);
         const isActive = !activeMoodKey || activeMoodKey === mood.key;
         const commonProps = {
             key: mood.key,

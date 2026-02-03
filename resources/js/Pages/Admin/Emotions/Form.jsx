@@ -1,14 +1,26 @@
 import AdminLayout from '@/Layouts/AdminLayout';
+import {
+    allowedColors,
+    formatMoodColorLabel,
+    getMoodColorClass,
+    normalizeMoodColorKey,
+} from '@/utils/moodColors';
 import { Link, useForm } from '@inertiajs/react';
 
 export default function EmotionForm({ emotion }) {
     const isEditing = Boolean(emotion);
+    const storedColor = emotion?.color ?? '';
+    const normalizedStoredColor = storedColor
+        ? normalizeMoodColorKey(storedColor)
+        : 'slate';
+    const hasInvalidStoredColor =
+        storedColor !== '' && normalizedStoredColor !== storedColor;
 
     const form = useForm({
         label: emotion?.label ?? '',
         key: emotion?.key ?? '',
         emoji: emotion?.emoji ?? '',
-        color: emotion?.color ?? '',
+        color: normalizedStoredColor,
         sort_order: emotion?.sort_order ?? '',
         is_active: emotion?.is_active ?? true,
     });
@@ -105,15 +117,33 @@ export default function EmotionForm({ emotion }) {
 
                         <label className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500">
                             Color key
-                            <input
-                                type="text"
-                                value={form.data.color}
-                                onChange={(event) => form.setData('color', event.target.value)}
-                                className="mt-2 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-800 outline-none focus:border-slate-400"
-                                placeholder="slate"
-                            />
+                            <div className="mt-2 flex items-center gap-3">
+                                <span
+                                    aria-hidden
+                                    className={`h-6 w-6 rounded-full ${getMoodColorClass(
+                                        form.data.color || 'slate',
+                                        500,
+                                    )} ring-2 ring-slate-200`}
+                                />
+                                <select
+                                    value={form.data.color}
+                                    onChange={(event) =>
+                                        form.setData('color', event.target.value)
+                                    }
+                                    className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-800 outline-none focus:border-slate-400"
+                                >
+                                    {allowedColors.map((color) => (
+                                        <option key={color} value={color}>
+                                            {formatMoodColorLabel(color)}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
                             {form.errors.color && (
                                 <p className="mt-1 text-xs text-rose-600">{form.errors.color}</p>
+                            )}
+                            {hasInvalidStoredColor && (
+                                <p className="mt-1 text-xs text-amber-600">Invalid color stored.</p>
                             )}
                         </label>
 
