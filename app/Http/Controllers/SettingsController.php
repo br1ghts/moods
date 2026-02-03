@@ -3,7 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\UpdateNotificationSettingsRequest;
-use Carbon\Carbon;
+use App\Services\ReminderScheduler;
 use Inertia\Inertia;
 
 class SettingsController extends Controller
@@ -35,11 +35,14 @@ class SettingsController extends Controller
         return Inertia::render('Settings', [
             'notificationSettings' => [
                 'enabled' => $settings->enabled,
+                'test_mode_enabled' => $settings->test_mode_enabled,
+                'test_interval_seconds' => $settings->test_interval_seconds,
                 'cadence' => $settings->cadence,
-                'preferred_time' => $settings->preferred_time,
-                'preferred_weekday' => $settings->preferred_weekday,
+                'daily_time' => $settings->daily_time,
+                'weekly_day' => $settings->weekly_day,
                 'timezone' => $settings->timezone,
             ],
+            'isAdmin' => $user?->email === 'brendonbaughray@gmail.com',
             'pushStatus' => [
                 'hasSubscription' => $subscriptions->isNotEmpty(),
                 'subscriptionsCount' => $subscriptions->count(),
@@ -48,7 +51,7 @@ class SettingsController extends Controller
         ]);
     }
 
-    public function update(UpdateNotificationSettingsRequest $request)
+    public function update(UpdateNotificationSettingsRequest $request, ReminderScheduler $scheduler)
     {
         $user = $request->user();
         $settings = $user->notificationSetting ?? $user->notificationSetting()->create();
@@ -57,22 +60,25 @@ class SettingsController extends Controller
         $enabled = $request->boolean('enabled');
         $cadence = $data['cadence'];
         $timezone = $data['timezone'];
-        $nextReminderAt = null;
-
-        if ($enabled && $cadence === 'hourly') {
-            $nextReminderAt = Carbon::now($timezone)
-                ->addHour()
-                ->startOfHour()
-                ->utc();
-        }
+        $nextDueAt = null;
 
         $settings->fill([
             'enabled' => $enabled,
+            'test_mode_enabled' => $data['test_mode_enabled'] ?? false,
+            'test_interval_seconds' => $data['test_interval_seconds'] ?? null,
             'cadence' => $cadence,
-            'preferred_time' => $data['preferred_time'] ?? null,
-            'preferred_weekday' => $data['preferred_weekday'] ?? null,
+            'daily_time' => $data['daily_time'] ?? null,
+            'weekly_day' => $data['weekly_day'] ?? null,
             'timezone' => $timezone,
-            'next_reminder_at' => $nextReminderAt,
+        ]);
+
+        if ($enabled) {
+            $next = $scheduler->computeNextDue($settings, now('UTC'));
+            $nextDueAt = $next?->copy()->utc();
+        }
+
+        $settings->forceFill([
+            'next_due_at' => $enabled ? $nextDueAt : null,
         ]);
 
         $settings->save();

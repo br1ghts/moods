@@ -10,19 +10,22 @@ class NotificationSetting extends Model
     protected $fillable = [
         'user_id',
         'enabled',
+        'test_mode_enabled',
+        'test_interval_seconds',
         'cadence',
-        'preferred_time',
-        'preferred_weekday',
+        'daily_time',
+        'weekly_day',
         'timezone',
         'last_sent_at',
-        'next_reminder_at',
+        'next_due_at',
     ];
 
     protected $casts = [
         'enabled' => 'boolean',
-        'preferred_weekday' => 'integer',
+        'test_mode_enabled' => 'boolean',
+        'weekly_day' => 'integer',
         'last_sent_at' => 'datetime',
-        'next_reminder_at' => 'datetime',
+        'next_due_at' => 'datetime',
     ];
 
     public function user(): BelongsTo

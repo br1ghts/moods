@@ -9,6 +9,7 @@ use Illuminate\Notifications\Notifiable;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Laravel\Sanctum\HasApiTokens;
 use App\Models\PushSubscription;
+use App\Models\ReminderSend;
 
 class User extends Authenticatable
 {
@@ -66,5 +67,10 @@ class User extends Authenticatable
     public function pushSubscriptions(): HasMany
     {
         return $this->hasMany(PushSubscription::class);
+    }
+
+    public function reminderSends(): HasMany
+    {
+        return $this->hasMany(ReminderSend::class);
     }
 }

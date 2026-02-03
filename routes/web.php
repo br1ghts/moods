@@ -3,6 +3,7 @@
 use App\Http\Controllers\Admin\AdminDashboardController;
 use App\Http\Controllers\Admin\AdminEmotionsController;
 use App\Http\Controllers\Admin\AdminMembersController;
+use App\Http\Controllers\Admin\AdminRemindersController;
 use App\Http\Controllers\Auth\GoogleController;
 use App\Http\Controllers\InsightsController;
 use App\Http\Controllers\MoodEntryController;
@@ -46,6 +47,10 @@ Route::middleware(['auth', 'admin.email'])
         Route::get('/members/{user}', [AdminMembersController::class, 'show'])->name('members.show');
         Route::patch('/members/{user}/toggle', [AdminMembersController::class, 'toggle'])->name('members.toggle');
         Route::delete('/members/{user}/push-subscriptions', [AdminMembersController::class, 'revokePushDevices'])->name('members.push.revoke');
+        Route::get('/reminders', [AdminRemindersController::class, 'index'])->name('reminders');
+        Route::get('/reminders/users/{user}', [AdminRemindersController::class, 'showUser'])->name('reminders.user');
+        Route::post('/reminders/tick', [AdminRemindersController::class, 'runTick'])->name('reminders.tick');
+        Route::post('/reminders/simulate', [AdminRemindersController::class, 'simulateDueNow'])->name('reminders.simulate');
         Route::get('/emotions', [AdminEmotionsController::class, 'index'])->name('emotions.index');
         Route::get('/emotions/create', [AdminEmotionsController::class, 'create'])->name('emotions.create');
         Route::post('/emotions', [AdminEmotionsController::class, 'store'])->name('emotions.store');

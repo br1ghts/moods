@@ -9,7 +9,7 @@ use Tests\TestCase;
 
 class NotificationSettingsTest extends TestCase
 {
-    public function test_can_switch_to_hourly_even_with_seconds_in_preferred_time(): void
+    public function test_can_switch_to_hourly_even_with_seconds_in_daily_time(): void
     {
         Carbon::setTestNow(Carbon::create(2026, 2, 2, 16, 45, 0, 'UTC'));
         $user = User::factory()->create();
@@ -18,16 +18,16 @@ class NotificationSettingsTest extends TestCase
             'user_id' => $user->id,
             'enabled' => true,
             'cadence' => 'daily',
-            'preferred_time' => '09:00:00',
-            'preferred_weekday' => 1,
+            'daily_time' => '09:00:00',
+            'weekly_day' => 1,
             'timezone' => 'America/Chicago',
         ]);
 
         $payload = [
             'enabled' => true,
             'cadence' => 'hourly',
-            'preferred_time' => '09:00:00',
-            'preferred_weekday' => 1,
+            'daily_time' => '09:00:00',
+            'weekly_day' => 1,
             'timezone' => 'America/Chicago',
         ];
 
@@ -39,12 +39,12 @@ class NotificationSettingsTest extends TestCase
         $this->assertDatabaseHas('notification_settings', [
             'user_id' => $user->id,
             'cadence' => 'hourly',
-            'preferred_time' => null,
-            'preferred_weekday' => null,
+            'daily_time' => null,
+            'weekly_day' => null,
         ]);
 
         $setting = NotificationSetting::where('user_id', $user->id)->firstOrFail();
-        $this->assertNotNull($setting->next_reminder_at);
+        $this->assertNotNull($setting->next_due_at);
 
         Carbon::setTestNow();
     }

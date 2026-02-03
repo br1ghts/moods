@@ -6,6 +6,7 @@ export default function AdminLayout({ children }) {
     const tabs = [
         { label: 'Overview', href: route('admin.dashboard'), name: 'admin.dashboard' },
         { label: 'Members', href: route('admin.members.index'), name: 'admin.members.index' },
+        { label: 'Reminders', href: route('admin.reminders'), name: 'admin.reminders' },
         { label: 'Emotions', href: route('admin.emotions.index'), name: 'admin.emotions.index' },
     ];
 

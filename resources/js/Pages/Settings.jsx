@@ -44,17 +44,31 @@ function urlBase64ToUint8Array(base64String) {
     return outputArray;
 }
 
-export default function Settings({ notificationSettings, pushStatus = {} }) {
+export default function Settings({ notificationSettings, pushStatus = {}, isAdmin = false }) {
     const {
         subscriptions = [],
     } = pushStatus;
 
+    const resolvedTimezone =
+        typeof Intl !== 'undefined'
+            ? Intl.DateTimeFormat().resolvedOptions().timeZone
+            : null;
+    const timezoneOptions =
+        resolvedTimezone && !timezones.includes(resolvedTimezone)
+            ? [resolvedTimezone, ...timezones]
+            : timezones;
+
     const form = useForm({
         enabled: notificationSettings?.enabled ?? false,
+        test_mode_enabled: notificationSettings?.test_mode_enabled ?? false,
+        test_interval_seconds: notificationSettings?.test_interval_seconds ?? 60,
         cadence: notificationSettings?.cadence ?? 'daily',
-        preferred_time: notificationSettings?.preferred_time ?? '',
-        preferred_weekday: notificationSettings?.preferred_weekday ?? 1,
-        timezone: notificationSettings?.timezone ?? 'America/Chicago',
+        daily_time: notificationSettings?.daily_time ?? '',
+        weekly_day: notificationSettings?.weekly_day ?? 1,
+        timezone:
+            notificationSettings?.timezone ??
+            resolvedTimezone ??
+            'America/Chicago',
     });
 
     const [pushSupported, setPushSupported] = useState(false);
@@ -378,11 +392,11 @@ export default function Settings({ notificationSettings, pushStatus = {} }) {
                             <span>Preferred time</span>
                             <input
                                 type="time"
-                                name="preferred_time"
-                                value={form.data.preferred_time}
+                                name="daily_time"
+                                value={form.data.daily_time}
                                 onChange={(event) =>
                                     form.setData(
-                                        'preferred_time',
+                                        'daily_time',
                                         event.target.value,
                                     )
                                 }
@@ -395,11 +409,11 @@ export default function Settings({ notificationSettings, pushStatus = {} }) {
                         <label className="flex flex-col gap-2 text-sm text-slate-600">
                             <span>Preferred weekday</span>
                             <select
-                                name="preferred_weekday"
-                                value={form.data.preferred_weekday}
+                                name="weekly_day"
+                                value={form.data.weekly_day}
                                 onChange={(event) =>
                                     form.setData(
-                                        'preferred_weekday',
+                                        'weekly_day',
                                         Number(event.target.value),
                                     )
                                 }
@@ -426,13 +440,53 @@ export default function Settings({ notificationSettings, pushStatus = {} }) {
                             }
                             className="mt-2 block w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2 text-sm text-slate-700 outline-none focus:border-slate-400"
                         >
-                            {timezones.map((tz) => (
+                            {timezoneOptions.map((tz) => (
                                 <option key={tz} value={tz}>
                                     {tz}
                                 </option>
                             ))}
                         </select>
                     </div>
+
+                    {isAdmin && (
+                        <div className="rounded-2xl border border-amber-200 bg-amber-50/60 p-4 text-sm text-amber-900">
+                            <p className="text-xs font-semibold uppercase tracking-[0.3em] text-amber-600">
+                                Admin test mode
+                            </p>
+                            <p className="mt-2 text-sm text-amber-800">
+                                Enable rapid test reminders. This overrides the normal cadence while enabled.
+                            </p>
+                            <div className="mt-3 flex flex-wrap items-center gap-4">
+                                <label className="flex items-center gap-2 text-sm text-amber-900">
+                                    <input
+                                        type="checkbox"
+                                        name="test_mode_enabled"
+                                        checked={form.data.test_mode_enabled}
+                                        onChange={(event) =>
+                                            form.setData('test_mode_enabled', event.target.checked)
+                                        }
+                                        className="h-4 w-4"
+                                    />
+                                    <span>Enable test reminders</span>
+                                </label>
+                                <label className="flex items-center gap-2 text-sm text-amber-900">
+                                    <span>Interval</span>
+                                    <select
+                                        name="test_interval_seconds"
+                                        value={form.data.test_interval_seconds}
+                                        onChange={(event) =>
+                                            form.setData('test_interval_seconds', Number(event.target.value))
+                                        }
+                                        disabled={!form.data.test_mode_enabled}
+                                        className="rounded-full border border-amber-200 bg-white px-3 py-1 text-sm text-amber-900 disabled:opacity-60"
+                                    >
+                                        <option value={30}>30 seconds</option>
+                                        <option value={60}>60 seconds</option>
+                                    </select>
+                                </label>
+                            </div>
+                        </div>
+                    )}
 
                     <div className="flex justify-end">
                         <button

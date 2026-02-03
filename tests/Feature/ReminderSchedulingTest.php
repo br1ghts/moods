@@ -4,10 +4,9 @@ namespace Tests\Feature;
 
 use App\Models\NotificationSetting;
 use App\Models\User;
-use App\Notifications\MoodReminderNotification;
-use App\Services\MoodReminderDispatcher;
+use App\Jobs\SendReminderJob;
 use Carbon\Carbon;
-use Illuminate\Support\Facades\Notification;
+use Illuminate\Support\Facades\Queue;
 use Tests\TestCase;
 
 class ReminderSchedulingTest extends TestCase
@@ -21,8 +20,8 @@ class ReminderSchedulingTest extends TestCase
         $payload = [
             'enabled' => true,
             'cadence' => 'hourly',
-            'preferred_time' => null,
-            'preferred_weekday' => null,
+            'daily_time' => null,
+            'weekly_day' => null,
             'timezone' => 'America/Chicago',
         ];
 
@@ -31,16 +30,16 @@ class ReminderSchedulingTest extends TestCase
             ->assertRedirect(route('settings'));
 
         $setting = NotificationSetting::where('user_id', $user->id)->firstOrFail();
-        $nextLocal = $setting->next_reminder_at->copy()->timezone('America/Chicago');
+        $nextLocal = $setting->next_due_at->copy()->timezone('America/Chicago');
 
         $this->assertSame('11:00', $nextLocal->format('H:i'));
 
         Carbon::setTestNow();
     }
 
-    public function test_hourly_dispatch_sends_at_top_of_hour_and_reschedules_next(): void
+    public function test_tick_dispatches_once_per_bucket(): void
     {
-        Notification::fake();
+        Queue::fake();
 
         Carbon::setTestNow(Carbon::create(2026, 2, 2, 16, 15, 0, 'UTC'));
 
@@ -51,19 +50,21 @@ class ReminderSchedulingTest extends TestCase
             'enabled' => true,
             'cadence' => 'hourly',
             'timezone' => 'America/Chicago',
-            'next_reminder_at' => Carbon::create(2026, 2, 2, 17, 0, 0, 'UTC'),
+            'next_due_at' => Carbon::create(2026, 2, 2, 17, 0, 0, 'UTC'),
         ]);
 
         Carbon::setTestNow(Carbon::create(2026, 2, 2, 17, 0, 0, 'UTC'));
 
-        app(MoodReminderDispatcher::class)->notifyHourlyUsers();
-
-        Notification::assertSentTo($user, MoodReminderNotification::class);
+        $this->artisan('mood:reminders:tick')->assertExitCode(0);
+        Queue::assertPushed(SendReminderJob::class, 1);
 
         $setting = NotificationSetting::where('user_id', $user->id)->firstOrFail();
-        $nextLocal = $setting->next_reminder_at->copy()->timezone('America/Chicago');
+        $nextLocal = $setting->next_due_at->copy()->timezone('America/Chicago');
 
         $this->assertSame('12:00', $nextLocal->format('H:i'));
+
+        $this->artisan('mood:reminders:tick')->assertExitCode(0);
+        Queue::assertPushed(SendReminderJob::class, 1);
 
         Carbon::setTestNow();
     }
